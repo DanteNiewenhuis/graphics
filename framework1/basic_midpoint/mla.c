@@ -34,19 +34,22 @@
  *
  */
 void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
-  int ix,iy;
-  int x,y;
+  int x,y,d;
 
   PutPixel(t,x0,y0,colour);
   PutPixel(t,x1,y1,colour);
 
-  if(x1>x0) ix=1; else ix=-1;
-  for(x=x0;x!=x1;x+=ix)
-    PutPixel(t,x,y0,colour);
-
-  if(y1>y0) iy=1; else iy=-1;
-  for(y=y0;y!=y1;y+=iy)
-    PutPixel(t,x1,y,colour);
+  y = y0;
+  d = (y0-y1)*(x0+1) + (x1-x0)*(y0 + 0.5) + x0*y1 - x1*y0;
+  for (x=x0; x!=x1; x++) {
+    PutPixel(t, x, y, colour);
+    if (d < 0) {
+      y = y + 1;
+      d = d + (x1 - x0) + (y0 - y1);
+    } else {
+      d = d + (y0 - y1);
+    }
+  }
 
   return;
 }
