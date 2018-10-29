@@ -84,8 +84,7 @@ void DrawFigure(SDL_Texture *texture) {
     exit(-1);
   }
 
-  i = 2;
-  // for(i=0; i<32; i++) {
+  for(i=0; i<32; i++) {
     /* Set drawing colour */
     switch((i>>2) % 4) {
       case 0:
@@ -106,7 +105,7 @@ void DrawFigure(SDL_Texture *texture) {
     mla(texture, mid_x, mid_y,
         (int)roundf(size*cos(2*M_PI/32*i))+mid_x,
         (int)roundf(size*sin(2*M_PI/32*i))+mid_y, colour);
-  // }
+  }
   /* It would be more efficient to call SDL_UpdateRect(), but I do not really
    * care.
    */
