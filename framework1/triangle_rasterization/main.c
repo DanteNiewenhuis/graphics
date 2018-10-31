@@ -32,10 +32,10 @@ const int   framebuffer_height = 64;
 const int   zoomed_pixel_size = 7;
 
 int     screen_width, screen_height;
-int     draw_optimized = 0;
+int     draw_optimized = 1;
 int     zoom = 1;
 int     scene = 1;
-int     draw_corners = 0;
+int     draw_corners = 1;
 int     color_by_putpixel_count = 0;
 
 byte    *framebuffer;
@@ -72,16 +72,35 @@ void PutPixel(int x, int y, byte r, byte g, byte b)
     // The pixels in framebuffer[] are layed out sequentially,
     // with the R, G and B values one after the other, e.g
     // RGBRGBRGB...
-    framebuffer[3*(framebuffer_width*y+x)] = r;
-    framebuffer[3*(framebuffer_width*y+x)+1] = g;
-    framebuffer[3*(framebuffer_width*y+x)+2] = b;
+    
+    if (!color_by_putpixel_count) {
+        framebuffer[3*(framebuffer_width*y+x)] = r;
+        framebuffer[3*(framebuffer_width*y+x)+1] = g;
+        framebuffer[3*(framebuffer_width*y+x)+2] = b;
+    }
+    else {
+        byte t;
+        for (int i = 0; i < 3; i++) {
+            if (i == 0) {t = r;}
+            if (i == 1) {t = g;}
+            if (i == 2) {t = b;}
+
+            if (t > 0) {
+                if (framebuffer[3*(framebuffer_width*y+x) + i] == 128) {framebuffer[3*(framebuffer_width*y+x) + i] = 255;}
+                if (framebuffer[3*(framebuffer_width*y+x) + i] == 0) {framebuffer[3*(framebuffer_width*y+x) + i] = 255;}
+            }
+        }
+    }
+    
+
 }
 
 void
 DrawTriangles(void)
 {
     struct  triangle tri;
-    for (unsigned int t = 0; t < sizeof(triangles)/sizeof(struct triangle); t++)
+    // for (unsigned int t = 0; t < sizeof(triangles)/sizeof(struct triangle); t++)
+    for (unsigned int t = 1; t < 2; t++)
     {
         tri = triangles[t];
 
@@ -152,7 +171,7 @@ DrawTrianglesOpenGL(void)
 void
 TestRasterizationSpeed(void)
 {
-    const int N = 1000;
+    const int N = 100000;
 
     struct timeval  t0, t1;
     double          diff;
@@ -195,7 +214,7 @@ TestRasterizationSpeed(void)
 void
 DrawPixels(void)
 {
-    const int N = 1000000;
+    const int N = 10000;
 
     struct timeval  t0, t1;
 
