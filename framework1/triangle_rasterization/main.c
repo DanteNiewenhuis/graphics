@@ -1,6 +1,14 @@
 /* Computer Graphics assignment, Triangle Rasterization
  *
  * Created by ...... Paul Melis
+ *
+ *
+ * Student name .... Thomas Bellucci & Dante Niewenhuis
+ * Student email ... th.bellucci@gmail.com & d.niewenhuis@hotmail.com
+ * Collegekaart .... 11257245 & 11058595
+ * Date ............ 1 November 2018
+ * Comments ........ We have added our names here because we have changed the
+ *                   PutPixel function to have the debug functionality.
  */
 
 #ifdef __APPLE__
@@ -32,7 +40,7 @@ const int   framebuffer_height = 64;
 const int   zoomed_pixel_size = 7;
 
 int     screen_width, screen_height;
-int     draw_optimized = 1;
+int     draw_optimized = 0;
 int     zoom = 1;
 int     scene = 1;
 int     draw_corners = 0;
@@ -72,11 +80,13 @@ void PutPixel(int x, int y, byte r, byte g, byte b)
     // The pixels in framebuffer[] are layed out sequentially,
     // with the R, G and B values one after the other, e.g
     // RGBRGBRGB...
+    // Updated to allow debug mode. 
     if (!color_by_putpixel_count){
       framebuffer[3*(framebuffer_width*y+x)] = r;
       framebuffer[3*(framebuffer_width*y+x)+1] = g;
       framebuffer[3*(framebuffer_width*y+x)+2] = b;
     } else {
+      // Implements debug-functionality.
       if (!framebuffer[3*(framebuffer_width*y+x)]){
         framebuffer[3*(framebuffer_width*y+x)] = 128;
       } else {
@@ -90,7 +100,6 @@ DrawTriangles(void)
 {
     struct  triangle tri;
     for (unsigned int t = 0; t < sizeof(triangles)/sizeof(struct triangle); t++)
-    // for (unsigned int t = 5; t < 6; t++)
     {
         tri = triangles[t];
 
@@ -161,7 +170,7 @@ DrawTrianglesOpenGL(void)
 void
 TestRasterizationSpeed(void)
 {
-    const int N = 100000;
+    const int N = 1000;
 
     struct timeval  t0, t1;
     double          diff;
@@ -204,7 +213,7 @@ TestRasterizationSpeed(void)
 void
 DrawPixels(void)
 {
-    const int N = 10000;
+    const int N = 1000000;
 
     struct timeval  t0, t1;
 
@@ -296,6 +305,7 @@ DrawScene(void)
 void
 KeyPressed(unsigned char key, int x, int y)
 {
+    if (x || y) {};
     switch (key)
     {
         case '1':
