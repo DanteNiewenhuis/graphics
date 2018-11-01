@@ -99,8 +99,8 @@ void
 DrawTriangles(void)
 {
     struct  triangle tri;
-    // for (unsigned int t = 0; t < sizeof(triangles)/sizeof(struct triangle); t++)
-    for (unsigned int t = 1; t < 2; t++)
+    for (unsigned int t = 0; t < sizeof(triangles)/sizeof(struct triangle); t++)
+    // for (unsigned int t = 1; t < 2; t++)
     {
         tri = triangles[t];
 
