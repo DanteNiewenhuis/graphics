@@ -4,14 +4,19 @@
  * Description ..... Midpoint Line Algorithm
  * Created by ...... Jurgen Sturm
  *
- * Student name ....
- * Student email ...
- * Collegekaart ....
- * Date ............
- * Comments ........
- *
- *
- * (always fill in these fields before submitting!!)
+ * Student name .... Thomas Bellucci & Dante Niewenhuis
+ * Student email ... th.bellucci@gmail.com & d.niewenhuis@hotmail.com
+ * Collegekaart .... 11257245 & 11058595
+ * Date ............ 1 November 2018
+ * Comments ........ Note the bit-shifting, this is faster than multiplying
+ *                   by 2. This "times 2" is used to get rid of floating point 
+ *                   operations and make the function integer-only. Additionally
+ *                   note the swap function, this is used make sure the program
+ *                   always draws from one side to the other (e.g. left to 
+ *                   right).
+ *                   Also, we have provided the unoptimized code at the bottom
+ *                   because it is unclear whether that is required to get full
+ *                   marks for part 1 of the assignment.
  */
 
 #include "SDL.h"
@@ -34,14 +39,14 @@
  *
  */
 
-// Swaps two two-dimensional vectors (i.e. points).
+// Swaps two points.
 int swap(int* x0, int* x1, int* y0, int* y1) {
   int s = *x0;
   *x0 = *x1;
   *x1 = s;
-  int k = *y0;
+  s = *y0;
   *y0 = *y1;
-  *y1 = k;
+  *y1 = s;
 
   return 1;
 }
@@ -51,7 +56,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   int d, x, y, x0s, y0s, x_incr, y_incr, x_update, xy_update, comp, *pointerX, 
       *pointerY, is_swapped = 0;
   
-  // put end pixels
+  // Place end pixels.
   PutPixel(t, x0, y0, colour);
   PutPixel(t, x1, y1, colour);
   
@@ -60,29 +65,31 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     swap(&x0, &x1, &y0, &y1);
   }
 
+  // Fill in parameters needed to draw a line in a particular octant.
   if ((y1 >= y0) && (x1-x0) > (y1-y0)) {
+    // Tackle nearly horizontal bottom actant.
     x0s = (x0 + 1) << 1;
     y0s = (y0 << 1) + 1;
     x_incr = 1;
     y_incr = 1;
     comp = -1;
-  // Tackle nearly horizontal top actant.
   } else if ((y0 > y1) && (x1-x0) >= (y0-y1)) {
+    // Tackle nearly horizontal top actant.
     x0s = (x0 + 1) << 1;
     y0s = (y0 << 1) - 1;
     x_incr = 1;
     y_incr = -1;
     comp = 1;
-  // Tackle nearly vertical bottom actant.
   } else if ((y0 <= y1) && (y1-y0) >= (x1-x0)) {
+    // Tackle nearly vertical bottom actant.
     is_swapped = swap(&x0, &y0, &x1, &y1);
     x0s = (x0 + 1) << 1;
     y0s = (y0 << 1) + 1;
     x_incr = 1;
     y_incr = 1;
     comp = -1;
-  // Tackle nearly vertical top actant.
   } else {
+    // Tackle nearly vertical top actant.
     is_swapped = swap(&x0, &y0, &x1, &y1);
     x0s = (x0 - 1) << 1;
     y0s = (y0 << 1) + 1;
@@ -91,14 +98,16 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     comp = 1;
   }
           
-  // Execute mla algorithm with modifications for the 
-  // different cases and uses integers only.
+  // Pre-compute starting value d and its update values.
   d = (y0 - y1)*x0s + (x1 - x0)*y0s + ((x0*y1) << 1) - ((x1*y0) << 1);
   x_update = (x_incr << 1)*(y0 - y1);
   xy_update = (y_incr << 1)*(x1 - x0) + x_update;
   
+  // Execute mla algorithm with modifications using integers only.
   pointerX = is_swapped ? &y : &x;
   pointerY = is_swapped ? &x : &y;
+  
+  // Loop through x (or y when swapped) and place dot at correct (x,y).
   for (x = x0, y = y0; x != x1; x += x_incr) {
     PutPixel(t, *pointerX, *pointerY, colour);
     if (comp*d > 0) {
@@ -113,7 +122,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
 }
 
 
-/* REMOVE THIS FROM COMMENTS TO SEE THE OLDER VERSION
+/* REMOVE THIS FROM COMMENTS TO SEE THE OLDER VERSION.
 void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   int d, x, y;
   
