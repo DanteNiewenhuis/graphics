@@ -103,7 +103,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   x_update = (x_incr << 1)*(y0 - y1);
   xy_update = (y_incr << 1)*(x1 - x0) + x_update;
   
-  // Execute mla algorithm with modifications using integers only.
+  // Create pointers to location of x and y to get correct pixel coordinate.
   pointerX = is_swapped ? &y : &x;
   pointerY = is_swapped ? &x : &y;
   
