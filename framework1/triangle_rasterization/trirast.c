@@ -115,6 +115,8 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
   float d20 = f(x2, y2, x0, y0, x_min, y_min);
   
   int inTriangle;
+  int firstHit;
+  int startingPoint = x_min;
   // Loop though bounding box and fill in pixels if in triangle 
   // according to the barycentric coordinates apha, beta and gamma.
   for (int y = y_min; y <= y_max; y++) {
@@ -124,14 +126,34 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
   	new_d20 = d20;
   
     inTriangle = 0;
+    firstHit = 1;
+
+    
     // loop through row of pixels, compute barycentric coordinates and fill in
-    for (int x = x_min; x <= x_max; x++) {
+    for (int x = startingPoint; x <= x_max; x++) {
       alpha = new_d12 / fa;
       beta = new_d20 / fb;
       gamma = 1.0 - (alpha + beta);
       if (alpha >= 0 && beta >= 0 && gamma >= 0) {
         if ((alpha > 0 || fa_off) && (beta > 0 || fb_off) && 
             (gamma > 0 || fg_off)) {
+        
+          // go back on the x_axis to get to the first point
+          if (x == startingPoint && x > 0) {
+              startingPoint--;
+              d12 -= d12_x_update;
+              d20 -= d20_x_update;
+              x-=2;
+              new_d12 -= d12_x_update;
+              new_d20 -= d20_x_update;
+              continue;
+          }
+
+          // update the starting point on the first hit
+          else if (firstHit) {
+            startingPoint = x;
+            firstHit = 0;
+          }
           PutPixel(x, y, r, g, b);
           inTriangle = 1;
         }
@@ -145,6 +167,17 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
       // update d12 and d20 for moving in the x-direction
       new_d12 += d12_x_update;
       new_d20 += d20_x_update;
+
+      if (firstHit) {
+          d12 += d12_x_update;
+          d20 += d20_x_update;
+      }
+    }
+
+    // remove all the updates if the row was empty
+    if (firstHit) {
+        d12 -= (x_max - startingPoint + 1)*d12_x_update;
+        d20 -= (x_max - startingPoint + 1)*d20_x_update;
     }
     // update d12 and d20 for moving in the y-direction.
   	d12 += d12_y_update;

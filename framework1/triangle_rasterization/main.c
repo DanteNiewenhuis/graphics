@@ -35,7 +35,7 @@ int     screen_width, screen_height;
 int     draw_optimized = 1;
 int     zoom = 1;
 int     scene = 1;
-int     draw_corners = 1;
+int     draw_corners = 0;
 int     color_by_putpixel_count = 0;
 
 byte    *framebuffer;
@@ -72,27 +72,17 @@ void PutPixel(int x, int y, byte r, byte g, byte b)
     // The pixels in framebuffer[] are layed out sequentially,
     // with the R, G and B values one after the other, e.g
     // RGBRGBRGB...
-    
-    if (!color_by_putpixel_count) {
-        framebuffer[3*(framebuffer_width*y+x)] = r;
-        framebuffer[3*(framebuffer_width*y+x)+1] = g;
-        framebuffer[3*(framebuffer_width*y+x)+2] = b;
+    if (!color_by_putpixel_count){
+      framebuffer[3*(framebuffer_width*y+x)] = r;
+      framebuffer[3*(framebuffer_width*y+x)+1] = g;
+      framebuffer[3*(framebuffer_width*y+x)+2] = b;
+    } else {
+      if (!framebuffer[3*(framebuffer_width*y+x)]){
+        framebuffer[3*(framebuffer_width*y+x)] = 128;
+      } else {
+        framebuffer[3*(framebuffer_width*y+x)] = 255;
+      }
     }
-    else {
-        byte t;
-        for (int i = 0; i < 3; i++) {
-            if (i == 0) {t = r;}
-            if (i == 1) {t = g;}
-            if (i == 2) {t = b;}
-
-            if (t > 0) {
-                if (framebuffer[3*(framebuffer_width*y+x) + i] == 128) {framebuffer[3*(framebuffer_width*y+x) + i] = 255;}
-                if (framebuffer[3*(framebuffer_width*y+x) + i] == 0) {framebuffer[3*(framebuffer_width*y+x) + i] = 255;}
-            }
-        }
-    }
-    
-
 }
 
 void
@@ -100,7 +90,7 @@ DrawTriangles(void)
 {
     struct  triangle tri;
     for (unsigned int t = 0; t < sizeof(triangles)/sizeof(struct triangle); t++)
-    // for (unsigned int t = 1; t < 2; t++)
+    // for (unsigned int t = 5; t < 6; t++)
     {
         tri = triangles[t];
 
