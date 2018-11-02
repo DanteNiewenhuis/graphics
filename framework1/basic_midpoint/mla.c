@@ -54,7 +54,7 @@ int swap(int* x0, int* x1, int* y0, int* y1) {
 // Optimized version of mla().
 void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   int d, x, y, x0s, y0s, x_incr, y_incr, x_update, xy_update, comp, *pointerX, 
-      *pointerY, is_swapped;
+      *pointerY, is_swapped = 0;
   
   // Place end pixels.
   PutPixel(t, x0, y0, colour);
@@ -64,9 +64,6 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   if (x0 > x1) {
     swap(&x0, &x1, &y0, &y1);
   }
-  
-  // Set up default drawing parameters.
-  is_swapped = 0;
 
   // Fill in parameters needed to draw a line in a particular octant.
   if ((y1 >= y0) && (x1-x0) > (y1-y0)) {
