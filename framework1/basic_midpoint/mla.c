@@ -39,7 +39,7 @@
  *
  */
 
-// Swaps two points.
+// Swaps two points each defined by x and y coordinates.
 int swap(int* x0, int* x1, int* y0, int* y1) {
   int s = *x0;
   *x0 = *x1;
@@ -47,7 +47,7 @@ int swap(int* x0, int* x1, int* y0, int* y1) {
   s = *y0;
   *y0 = *y1;
   *y1 = s;
-
+  
   return 1;
 }
  
@@ -60,7 +60,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   PutPixel(t, x0, y0, colour);
   PutPixel(t, x1, y1, colour);
   
-  // Ensure x1 >= x0. This ensures that we always draw from left to right.
+  // Ensure x1 >= x0. TEnsures that we always draw from from one side to the other.
   if (x0 > x1) {
     swap(&x0, &x1, &y0, &y1);
   }
@@ -103,11 +103,12 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   x_update = (x_incr << 1)*(y0 - y1);
   xy_update = (y_incr << 1)*(x1 - x0) + x_update;
   
-  // Create pointers to location of x and y to get correct pixel coordinate.
+  // Create pointers to location of x and y variables to get correct 
+  // pixel coordinate for drawing the pixel when swapped.
   pointerX = is_swapped ? &y : &x;
   pointerY = is_swapped ? &x : &y;
   
-  // Loop through x (or y when swapped) and place dot at correct (x,y).
+  // Loop through x (or y when swapped) and place pixel at (x,y).
   for (x = x0, y = y0; x != x1; x += x_incr) {
     PutPixel(t, *pointerX, *pointerY, colour);
     if (comp*d > 0) {
