@@ -14,9 +14,6 @@
  *                   note the swap function, this is used make sure the program
  *                   always draws from one side to the other (e.g. left to 
  *                   right).
- *                   Also, we have provided the unoptimized code at the bottom
- *                   because it is unclear whether that is required to get full
- *                   marks for part 1 of the assignment.
  */
 
 #include "SDL.h"
@@ -53,8 +50,8 @@ int swap(int* x0, int* x1, int* y0, int* y1) {
  
 // Optimized version of mla().
 void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
-  int d, x, y, x0s, y0s, x_incr, y_incr, x_update, xy_update, comp, *pointerX, 
-      *pointerY, is_swapped = 0;
+  int d, x, y, x0s, y0s, x_update, xy_update, *pointerX, *pointerY;
+  int x_incr = 1, y_incr = 1, comp = 1, is_swapped = 0;
   
   // Place end pixels.
   PutPixel(t, x0, y0, colour);
@@ -70,14 +67,11 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     // Tackle nearly horizontal bottom actant.
     x0s = (x0 + 1) << 1;
     y0s = (y0 << 1) + 1;
-    x_incr = 1;
-    y_incr = 1;
-    comp = 1;
+
   } else if ((y0 > y1) && (x1-x0) >= (y0-y1)) {
     // Tackle nearly horizontal top actant.
     x0s = (x0 + 1) << 1;
     y0s = (y0 << 1) - 1;
-    x_incr = 1;
     y_incr = -1;
     comp = -1;
   } else if ((y0 <= y1) && (y1-y0) >= (x1-x0)) {
@@ -85,16 +79,12 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     is_swapped = swap(&x0, &y0, &x1, &y1);
     x0s = (x0 + 1) << 1;
     y0s = (y0 << 1) + 1;
-    x_incr = 1;
-    y_incr = 1;
-    comp = 1;
   } else {
     // Tackle nearly vertical top actant.
     is_swapped = swap(&x0, &y0, &x1, &y1);
     x0s = (x0 - 1) << 1;
     y0s = (y0 << 1) + 1;
     x_incr = -1;
-    y_incr = 1;
     comp = -1;
   }
           
@@ -121,84 +111,3 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
 
   return;
 }
-
-
-/* REMOVE THIS FROM COMMENTS TO SEE THE OLDER VERSION.
-void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
-  int d, x, y;
-  
-  // put end pixels
-  PutPixel(t, x0, y0, colour);
-  PutPixel(t, x1, y1, colour);
-  
-  // Ensure x1 >= x0 by swapping (if needed).
-  // This takes care of the left side of the circle.
-  if (x0 > x1) {
-    x = x0;
-    y = y0; 
-    x0 = x1;
-    y0 = y1;
-    x1 = x;
-    y1 = y;
-  }
-    
-  // tackle nearly horizontal bottom octant
-  if ((y1 >= y0) && (x1-x0) >= (y1-y0)) {
-    
-    d = (y0-y1)*(x0+1) + (x1-x0)*(y0+0.5) + x0*y1 - x1*y0;
-    for (x=x0, y=y0; x!=x1; x++) {
-      PutPixel(t, x, y, colour);
-      if (d < 0) {
-        y = y + 1;
-        d = d + (y0 - y1) + (x1 - x0);
-      } else {
-        d = d + (y0 - y1);
-      }
-    }
-  
-  // tackle nearly horizontal top actant
-  } else if ((y0 > y1) && (x1-x0) >= (y0-y1)) {
-
-    d = (y0-y1)*(x0+1) + (x1-x0)*(y0-0.5) + x0*y1 - x1*y0;
-    for (x=x0, y=y0; x!=x1; x++) {
-      PutPixel(t, x, y, colour);
-      if (d > 0) {
-        y = y - 1;
-        d = d + (y0 - y1) - (x1 - x0);
-      } else {
-        d = d + (y0 - y1);
-      }
-    }
-  
-  // tackle nearly vertical bottom octant
-  } else if ((y0 < y1) && (y1-y0) > (x1-x0)) {
-    
-    d = (x0-x1)*(y0+1) + (y1-y0)*(x0+0.5) + y0*x1 - y1*x0;
-    for (x=x0, y=y0; y!=y1; y++) {
-      PutPixel(t, x, y, colour);
-      if (d < 0) {
-        x = x + 1;
-        d = d + (x0 - x1) + (y1 - y0);
-      } else {
-        d = d + (x0 - x1);
-      }
-    }
-
-  // tackle nearly vertical top octant
-  } else if ((y0 > y1) && (y0-y1) > (x1-x0)) {
-
-    d = (x0-x1)*(y0-1) + (y1-y0)*(x0+0.5) + y0*x1 - y1*x0;
-    for (x=x0, y=y0; y!=y1; y--) {
-      PutPixel(t, x, y, colour);
-      if (d > 0) {
-        x = x + 1;
-        d = d - (x0 - x1) + (y1 - y0);
-      } else {
-        d = d - (x0 - x1);
-      }
-    }
-  }
-}
-*/
-
-

@@ -4,7 +4,7 @@
  * Created by ...... Paul Melis
  *
  * Student name .... Dante Niewenhuis, Thomas Bellucci
- * Student email ...
+ * Student email ... th.bellucci@gmail.com & d.niewenhuis@hotmail.com
  * Collegekaart .... 11058595, 11257245
  * Date ............ 2 november 2018
  * Comments ........ 
