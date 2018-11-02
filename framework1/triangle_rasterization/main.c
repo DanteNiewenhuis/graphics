@@ -170,7 +170,7 @@ DrawTrianglesOpenGL(void)
 void
 TestRasterizationSpeed(void)
 {
-    const int N = 1000;
+    const int N = 100000;
 
     struct timeval  t0, t1;
     double          diff;
