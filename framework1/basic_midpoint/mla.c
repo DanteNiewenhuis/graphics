@@ -54,7 +54,7 @@ int swap(int* x0, int* x1, int* y0, int* y1) {
 // Optimized version of mla().
 void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   int d, x, y, x0s, y0s, x_incr, y_incr, x_update, xy_update, comp, *pointerX, 
-      *pointerY, is_swapped = 0;
+      *pointerY, is_swapped;
   
   // Place end pixels.
   PutPixel(t, x0, y0, colour);
@@ -64,6 +64,9 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   if (x0 > x1) {
     swap(&x0, &x1, &y0, &y1);
   }
+  
+  // Set up default drawing parameters.
+  is_swapped = 0;
 
   // Fill in parameters needed to draw a line in a particular octant.
   if ((y1 >= y0) && (x1-x0) > (y1-y0)) {
@@ -72,14 +75,14 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     y0s = (y0 << 1) + 1;
     x_incr = 1;
     y_incr = 1;
-    comp = -1;
+    comp = 1;
   } else if ((y0 > y1) && (x1-x0) >= (y0-y1)) {
     // Tackle nearly horizontal top actant.
     x0s = (x0 + 1) << 1;
     y0s = (y0 << 1) - 1;
     x_incr = 1;
     y_incr = -1;
-    comp = 1;
+    comp = -1;
   } else if ((y0 <= y1) && (y1-y0) >= (x1-x0)) {
     // Tackle nearly vertical bottom actant.
     is_swapped = swap(&x0, &y0, &x1, &y1);
@@ -87,7 +90,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     y0s = (y0 << 1) + 1;
     x_incr = 1;
     y_incr = 1;
-    comp = -1;
+    comp = 1;
   } else {
     // Tackle nearly vertical top actant.
     is_swapped = swap(&x0, &y0, &x1, &y1);
@@ -95,7 +98,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
     y0s = (y0 << 1) + 1;
     x_incr = -1;
     y_incr = 1;
-    comp = 1;
+    comp = -1;
   }
           
   // Pre-compute starting value d and its update values.
@@ -111,7 +114,7 @@ void mla(SDL_Texture *t, int x0, int y0, int x1, int y1, Uint32 colour) {
   // Loop through x (or y when swapped) and place pixel at (x,y).
   for (x = x0, y = y0; x != x1; x += x_incr) {
     PutPixel(t, *pointerX, *pointerY, colour);
-    if (comp*d > 0) {
+    if (comp*d < 0) {
       y += y_incr;
       d += xy_update;
     } else {
