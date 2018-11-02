@@ -7,7 +7,7 @@
  * Student name .... Thomas Bellucci & Dante Niewenhuis
  * Student email ... th.bellucci@gmail.com & d.niewenhuis@hotmail.com
  * Collegekaart .... 11257245 & 11058595
- * Date ............ 1 November 2018
+ * Date ............ 2 November 2018
  * Comments ........ Note the bit-shifting, this is faster than multiplying
  *                   by 2. This "times 2" is used to get rid of floating point 
  *                   operations and make the function integer-only. Additionally
