@@ -1,0 +1,120 @@
+<head>
+    <style>
+        body {
+            background-color: #222222;
+        }
+        #glCanvas{
+            display: block;
+            margin: auto;
+            margin-top: 5%;
+            width: 800px;
+        }
+
+        #buttons{
+            margin: auto;
+            width: 40%;
+            margin-top: 2%;
+        }
+
+        #buttons input{
+            background-color: #111111;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+
+<body onload="start(&quot;transformations&quot;)">
+    <canvas id="glCanvas" width="800" height="600"></canvas>
+    <div id=buttons>
+        <input type="button" value="transformations" onclick="start(this.value)" />
+        <input type="button" value="gimbal" onclick="start(this.value)" />
+        <input type="button" value="camera" onclick="start(this.value)" />
+        <input type="button" value="ortho" onclick="start(this.value)" />
+    </div>
+</body>
+
+<script src="https://webglfundamentals.org/webgl/resources/m4.js"></script>
+
+<script>
+    var active = "";
+</script>
+
+<script id="fragShader" type="shader">
+    #ifdef GL_ES
+    precision highp float;
+    #endif
+    varying highp vec3 vColor;
+    varying highp vec3 vLighting;
+
+    void main(void) {
+        gl_FragColor = vec4(vColor * vLighting, 1.0);
+    }
+</script>
+<script id="vertShader" type="shader">
+    attribute vec3 aVertexPosition;
+    attribute vec3 aVertexNormal;
+    attribute vec3 aVertexColor;
+
+    uniform mat4 uCMatrix;
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    uniform mat4 uNMatrix;
+
+    varying highp vec3 vColor;
+    varying highp vec3 vLighting;
+
+    void main(void) {
+        gl_Position = uPMatrix  * uCMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vColor = aVertexColor;
+
+        // Apply lighting effect
+        highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);
+        highp vec3 directionalLightColor = vec3(1.0, 1.0, 1.0);
+        highp vec3 directionalVector = normalize(vec3(0.0, 0.0, 1.0));
+
+        highp vec4 transformedNormal = uNMatrix * vec4(aVertexNormal, 0.0);
+
+        highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
+        vLighting = ambientLight + (directionalLightColor * directional);
+    }
+</script>
+
+<script src="teapot.js"></script>
+<script src="axis.js"></script>
+<script src="cube.js"></script>
+<script src="transformations/transformations.js"></script>
+<script src="transformations/main.js"></script>
+<script src="gimbal/main.js"></script>
+<script src="positioning_the_camera/lookat.js"></script>
+<script src="positioning_the_camera/main.js"></script>
+<script src="orthogonal_projection/main.js"></script>
+<script src="orthogonal_projection/ortho.js"></script>
+
+<script>
+function start(val) {
+    if (active != val) {
+        active = val;
+        if (active == "transformations") {
+            TransformationsMain();
+        }
+        else if (active == "gimbal") {
+            GimbalMain();
+        }
+        else if (active == "camera") {
+            CameraMain();
+        }
+        else if (active == "ortho") {
+            OrthoMain();
+        }
+    }
+}
+</script>
