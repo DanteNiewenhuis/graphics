@@ -1,3 +1,8 @@
 Q1: XYZ
 
-Q2:
+Q2: The rotation-order is XYZ, so we start with X. Lets say we do not rotate around the X-axis (it does not matter in this example, 
+so an angle of zero degrees suffices). Then we rotate around Y. We know this is 90 degrees (as this is what we specified when
+initializing the object). This rotation causes Z to coincide with the X-axis. Therefore, now rotating around our Z-axis will result
+in rotating around our X axis again. 
+Hence, because of this 90 degree rotation in Y, we caused the first circle-of-rotation from X to align with the 
+circle-of-rotation from Z.
