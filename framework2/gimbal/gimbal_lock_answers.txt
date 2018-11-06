@@ -1,3 +1,7 @@
 Q1: XYZ
 
-Q2: Rotating around Y first (how to object is initialized) causes X and Z to align. Therefore, rotating around either of them will result in the same tranformation (and hence we lose one dimension). 
+Q2: Rotating around Y first (how the model is initialized in the world) causes Z and to align
+with the original X position and X becomes -Z. 
+Say, we follow the the ordering of Q1: X, then Y, then Z. If we rotate around X we do not have 
+a problem yet. However, if we rotate around Y, then Z is moved to the original position of X 
+(and hence X and Z coincide). Finally, rotating around Z results in identical movement to X.
