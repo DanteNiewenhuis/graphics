@@ -68,10 +68,10 @@ function myLookAt(eyeX, eyeY, eyeZ,
 
     var cy = norm(crossProduct(cz, cx));
 
-    var R = [cx[0], cx[1], cx[2],0.0,
-             cy[0], cy[1], cy[2],0.0,
-             cz[0], cz[1], cz[2],0.0,
-            0.0, 0.0, 0.0, 1.0];
+    var R = [cx[0], cx[1], cx[2], 0.0,
+             cy[0], cy[1], cy[2], 0.0,
+             cz[0], cz[1], cz[2], 0.0,
+             0.0, 0.0, 0.0, 1.0];
 
     return m4.multiply(m4.transpose(R), mat);
 }
