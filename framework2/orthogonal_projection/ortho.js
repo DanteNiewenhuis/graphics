@@ -1,7 +1,6 @@
 /*
  * Student names:
  * Student numbers:
- * MOETEN DEZE WAARDEN NIET GETRANSPONEERD WORDEN?
  */
 
 function myOrtho(left, right, bottom, top, near, far) {
