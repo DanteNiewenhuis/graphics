@@ -30,7 +30,7 @@ function myScale(x, y, z) {
 }
 
 function norm(a) {
-	// Normalizes a vector to unit length.
+    // Normalizes a vector to unit length.
     var l = Math.sqrt(dot(a, a));
     return vectorDivide(a, l);
 }
