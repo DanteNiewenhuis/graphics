@@ -195,17 +195,15 @@ function DrawRotatedTeapot(rotx, roty, rotz) {
 
 function DrawTeapots() {
     mvMat = m4.identity();
-    // Translate Teapot to 0.0, 0.0, 0.0 (Used to illustrate how to translate).
-    m4.translate(mvMat, 0.0, 0.0, 0.0, mvMat);
     DrawRotatedTeapot(x_rotation, 0.0, z_rotation);
 
     mvMat = m4.identity();
-    // Translate Teapot to 0.0, 0.0, 0.0 (Used to illustrate how to translate).
+    // Translate Teapot to 15.0, 0.0, 0.0 (Used to illustrate how to translate).
     m4.translate(mvMat, 15.0, 0.0, 0.0, mvMat);
     DrawRotatedTeapot(x_rotation, 45.0, z_rotation);
 
     mvMat = m4.identity();
-    // Translate Teapot to 0.0, 0.0, 0.0 (Used to illustrate how to translate).
+    // Translate Teapot to 30.0, 0.0, 0.0 (Used to illustrate how to translate).
     m4.translate(mvMat, 30.0, 0.0, 0.0, mvMat);
     DrawRotatedTeapot(x_rotation, 90.0, z_rotation);
 }

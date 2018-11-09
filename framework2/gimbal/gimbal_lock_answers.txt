@@ -1,8 +1,17 @@
-Q1: XYZ
+Q1: 
+The order of the rotations is changed using keypress '1' and '2'. This will
+change the order between XYZ and YXZ with XYZ as the default. 
+The chosen order is used in the function DrawRotatedTeapot.
 
-Q2: The rotation-order is XYZ, so we start with X. Lets say we do not rotate around the X-axis (it does not matter in this example, 
-so an angle of zero degrees suffices). Then we rotate around Y. We know this is 90 degrees (as this is what we specified when
-initializing the object). This rotation causes Z to coincide with the X-axis. Therefore, now rotating around our Z-axis will result
-in rotating around our X axis again. 
-Hence, because of this 90 degree rotation in Y, we caused the first circle-of-rotation from X to align with the 
-circle-of-rotation from Z.
+Q2: 
+The gimbal lock problem is that the order of rotation operations can have a 
+big impact on the resulting total rotation. 
+In our example we observe that instead of rotating around the X, Y and Z axis, 
+the third teapot rotates only around the x axis.
+This is because with the order of XYZ the teapot first rotates around the X axis 
+as expected, then rotates around the Y axis but because the Y rotation was 
+90 degrees the Z axis is now the old X axis. This means that when we rotate around
+the Z axis is looks like we are rotating around the X axis again. 
+
+When the order is changed to YXZ this problem doesn't exist with this perticular 
+combination of rotations.
