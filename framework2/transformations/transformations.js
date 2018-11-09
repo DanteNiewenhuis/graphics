@@ -36,14 +36,14 @@ function norm(a) {
 }
 
 function crossProduct(a, b) {
-	// Calculates the cross-product between two vectors.
+    // Calculates the cross-product between two vectors.
     return [a[1]*b[2] - a[2]*b[1], 
             a[2]*b[0] - a[0]*b[2], 
             a[0]*b[1] - a[1]*b[0]];
 }
 
 function dot(a, b) {
-	// Calculates the dot-product between two vectors.
+    // Calculates the dot-product between two vectors.
     var res = 0;
     for (var i = 0; i < 3; i++) {
         res += a[i] * b[i];
@@ -52,7 +52,7 @@ function dot(a, b) {
 }
 
 function vectorDivide(a, l) {
-	// Multiplies vector with 1 / a.
+    // Multiplies vector with 1 / a.
     var res = [0,0,0];
     for (var i = 0; i < 3; i++) {
         res[i] = a[i] / l;
@@ -61,7 +61,7 @@ function vectorDivide(a, l) {
 }
 
 function findNonColinear(a) {
-	// Calculates a non-colinear for the vector a.
+    // Calculates a non-colinear for the vector a.
     var res = [a[0], a[1], a[2]];
     var smallestIndex = 0;
     var smallestValue = res[0];
@@ -92,7 +92,7 @@ function myRotate(angle, x, y, z) {
     var v = crossProduct(w, u);
     
     // Create matrix out of orthonormal basis to rotate vector
-	// we want to rotate around to z-axis.
+    // we want to rotate around to z-axis.
     var A = [
             u[0], u[1], u[2],0.0,
             v[0], v[1], v[2],0.0,
@@ -100,7 +100,7 @@ function myRotate(angle, x, y, z) {
             0.0,  0.0,  0.0, 1.0
             ];
 
-	// Rotates around Z-axis.
+    // Rotates around Z-axis.
     var B = [
              Math.cos(angle),  Math.sin(angle), 0.0, 0.0,
              -Math.sin(angle), Math.cos(angle), 0.0, 0.0,
@@ -110,7 +110,7 @@ function myRotate(angle, x, y, z) {
 
     var C = m4.transpose(A);
 
-	// Combine all matrices into a single matrix.
+    // Combine all matrices into a single matrix.
     var mat = m4.multiply(A, m4.multiply(B, C));
     return mat;
 }
