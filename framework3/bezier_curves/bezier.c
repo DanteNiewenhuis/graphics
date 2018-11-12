@@ -90,11 +90,14 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
     int i;
     float u;
     float u_incr = 1.0 / num_segments;
-    for (i = 0, u = 0; u <= 1; i++, u += u_incr) {
+    for (i = 0, u = 0; u < 1.0; i++, u += u_incr) {
         evaluate_bezier_curve(&x, &y, p, num_points, u);
         verts[i][0] = x;
         verts[i][1] = y;
     }
+    // Add last control point to verts. 
+    verts[i][0] = p[num_points-1].x;
+    verts[i][1] = p[num_points-1].y;
 
     // This creates the VBO and binds an array to it.
     glGenBuffers(1, buffer);
