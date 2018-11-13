@@ -96,11 +96,14 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
     int i;
     float u;
     float u_incr = 1.0 / num_segments;
-    for (i = 0, u = 0; u <= 1; i++, u += u_incr) {
+    for (i = 0, u = 0; i < num_segments; i++, u += u_incr) {
         evaluate_bezier_curve(&x, &y, p, num_points, u);
         verts[i][0] = x;
         verts[i][1] = y;
     }
+    // Add last control point to verts. 
+    verts[i][0] = p[num_points-1].x;
+    verts[i][1] = p[num_points-1].y;
 
     // This creates the VBO and binds an array to it.
     glGenBuffers(1, buffer);
@@ -126,14 +129,29 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
 int
 intersect_cubic_bezier_curve(float *y, control_point p[], float x)
 {
-    int num_points = 4;
-    float u = x/20;
-    printf("u: %f\n", u);
-
-    float x2;
-    evaluate_bezier_curve(&x2, y, p, num_points, u);
-
-    printf("x: %f, x2: %f, diff: %f\n", x, x2, x - x2);
-    printf("y: %f\n", *y);
-    return 1;
+    float u, y_new, x_new;
+    float u_min = -1.0, u_max = 2.0;
+    
+    // Implements binary search to find the value of u.
+    for (int i = 0; i < 10; i++) {
+       // Guess best value for u.
+       u = (u_min + u_max) / 2;
+       
+       // Evaluate with current estimate of u.
+       evaluate_bezier_curve(&x_new, &y_new, p, 4, u);
+       
+       // If x_new is too small, then update min and max margins.
+       if (x_new < x) {
+          u_min = u;
+       } else {
+          u_max = u;
+       }
+    }    
+    // If u makes sense, then return value, else fail.
+    if (u >= 0.0 && u <= 1.0) {
+        *y = y_new;
+        return 1;
+    }
+    //printf("No intersection! %f\n", u);
+    return 0;
 }
