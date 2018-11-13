@@ -52,12 +52,18 @@ evaluate_bezier_curve(float *x, float *y, control_point p[], int num_points, flo
     
     float bino_dist, B_n;
     int n = num_points - 1;
+    // printf("evaluate, n: %d, u: %f\n", n, u);
 
+    float u_m_pow = pow(1 - u, n);
+    float u_pow = 1;
     for (int i = 0; i < num_points; i++) {
         bino_dist = binomial_distr(n, i);
+
+        // printf("u_pow: %f, u_m_pow: %f\n", u_pow, u_m_pow);
+        B_n = bino_dist * u_pow * pow(1 - u, n - i);
         
-        B_n = bino_dist * pow(u, i) * pow(1 - u, n - i);
-        
+        u_pow *= u;
+        u_m_pow /= (1 - u);
         *x += B_n * p[i].x;
         *y += B_n * p[i].y;
     }
@@ -120,5 +126,14 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
 int
 intersect_cubic_bezier_curve(float *y, control_point p[], float x)
 {
-    return 0;
+    int num_points = 4;
+    float u = x/20;
+    printf("u: %f\n", u);
+
+    float x2;
+    evaluate_bezier_curve(&x2, y, p, num_points, u);
+
+    printf("x: %f, x2: %f, diff: %f\n", x, x2, x - x2);
+    printf("y: %f\n", *y);
+    return 1;
 }
