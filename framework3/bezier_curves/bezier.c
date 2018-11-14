@@ -52,18 +52,12 @@ evaluate_bezier_curve(float *x, float *y, control_point p[], int num_points, flo
     
     float bino_dist, B_n;
     int n = num_points - 1;
-    // printf("evaluate, n: %d, u: %f\n", n, u);
 
-    float u_m_pow = pow(1 - u, n);
-    float u_pow = 1;
     for (int i = 0; i < num_points; i++) {
         bino_dist = binomial_distr(n, i);
-
-        // printf("u_pow: %f, u_m_pow: %f\n", u_pow, u_m_pow);
-        B_n = bino_dist * u_pow * pow(1 - u, n - i);
         
-        u_pow *= u;
-        u_m_pow /= (1 - u);
+        B_n = bino_dist * pow(u, i) * pow(1 - u, n - i);
+        
         *x += B_n * p[i].x;
         *y += B_n * p[i].y;
     }
@@ -132,7 +126,7 @@ intersect_cubic_bezier_curve(float *y, control_point p[], float x)
     float u, y_new, x_new;
     float u_min = -1.0, u_max = 2.0;
     int max_iter = 50;
-    float eps = 0.001;
+    float eps = 0.0001;
     
     // Implements binary search to find the value of u.
     for (int i = 0; i < max_iter; i++) {
