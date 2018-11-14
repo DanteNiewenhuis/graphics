@@ -131,27 +131,34 @@ intersect_cubic_bezier_curve(float *y, control_point p[], float x)
 {
     float u, y_new, x_new;
     float u_min = -1.0, u_max = 2.0;
+    int max_iter = 50;
+    float eps = 0.001;
     
     // Implements binary search to find the value of u.
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < max_iter; i++) {
        // Guess best value for u.
        u = (u_min + u_max) / 2;
        
        // Evaluate with current estimate of u.
        evaluate_bezier_curve(&x_new, &y_new, p, 4, u);
        
-       // If x_new is too small, then update min and max margins.
+       // Break out of loop if threshold eps is reached.
+       if (pow(x - x_new, 2) < eps) {
+          break;
+       }
+       
+       // Otherwise, update min and max margins.
        if (x_new < x) {
           u_min = u;
        } else {
           u_max = u;
        }
     }    
-    // If u makes sense, then return value, else fail.
+    
+    // If u is between 0 and 1, then return value, else fail.
     if (u >= 0.0 && u <= 1.0) {
         *y = y_new;
         return 1;
     }
-    //printf("No intersection! %f\n", u);
     return 0;
 }
