@@ -124,7 +124,7 @@ int
 intersect_cubic_bezier_curve(float *y, control_point p[], float x)
 {
     float u, y_new, x_new;
-    float u_min = -1.0, u_max = 2.0;
+    float u_min = -0.1, u_max = 1.1;
     int max_iter = 50;
     float eps = 0.001;
     
@@ -137,7 +137,7 @@ intersect_cubic_bezier_curve(float *y, control_point p[], float x)
        evaluate_bezier_curve(&x_new, &y_new, p, 4, u);
        
        // Break out of loop if threshold eps is reached.
-       if (pow(x - x_new, 2) < eps) {
+       if (fabs(x - x_new) < eps) {
           break;
        }
        
