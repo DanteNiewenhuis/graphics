@@ -126,7 +126,7 @@ intersect_cubic_bezier_curve(float *y, control_point p[], float x)
     float u, y_new, x_new;
     float u_min = -1.0, u_max = 2.0;
     int max_iter = 50;
-    float eps = 0.0001;
+    float eps = 0.001;
     
     // Implements binary search to find the value of u.
     for (int i = 0; i < max_iter; i++) {
