@@ -51,6 +51,8 @@ evaluate_bezier_curve(float *x, float *y, control_point p[], int num_points, flo
     *y = 0.0;
     
     float bino_dist, B_n;
+
+    // calculate degree of the curve
     int n = num_points - 1;
 
     for (int i = 0; i < num_points; i++) {
@@ -90,11 +92,14 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
     int i;
     float u;
     float u_incr = 1.0 / num_segments;
+
+    // determine all line segments (points on curve)
     for (i = 0, u = 0.0; i < num_segments; i++, u += u_incr) {
         evaluate_bezier_curve(&x, &y, p, num_points, u);
         verts[i][0] = x;
         verts[i][1] = y;
     }
+
     // Add last control point to verts. 
     verts[i][0] = p[num_points-1].x;
     verts[i][1] = p[num_points-1].y;
@@ -120,15 +125,14 @@ draw_bezier_curve(int num_segments, control_point p[], int num_points)
    Return 0 if no intersection exists.
 */
 
-int
-intersect_cubic_bezier_curve(float *y, control_point p[], float x)
+// use binary search to find the value of u.
+int intersect_cubic_bezier_curve(float *y, control_point p[], float x)
 {
     float u, y_new, x_new;
     float u_min = -0.1, u_max = 1.1;
     int max_iter = 50;
     float eps = 0.001;
     
-    // Implements binary search to find the value of u.
     for (int i = 0; i < max_iter; i++) {
        // Guess best value for u.
        u = (u_min + u_max) / 2;
