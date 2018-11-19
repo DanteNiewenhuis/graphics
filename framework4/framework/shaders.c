@@ -93,14 +93,14 @@ shade_matte(intersection_point ip)
 vec3
 shade_blinn_phong(intersection_point ip)
 {
-	vec3 noise;
+	  vec3 p;
     vec3 cd = v3_create(1, 0, 0);
     vec3 cs = v3_create(1, 1, 1);
     
     float alpha = 50, kd = 0.8, ks = 0.5;
     
     // Accumulate diffuse and specular components for each light.
-    float I_diff = 0, I_spec = 0, I_tmp = 0;
+    float I_diff = 0, I_spec = 0;
     for (int i = 0; i < scene_num_lights; i++) {
         light li = scene_lights[i];
         
@@ -109,22 +109,19 @@ shade_blinn_phong(intersection_point ip)
         l = v3_normalize(l);
         
         // Check whether this l vector is obstructed by an object.
-        noise = v3_multiply(l, 0.001);
-        if (shadow_check(v3_add(ip.p, noise), l)) {
+        p = v3_add(ip.p, v3_multiply(l, 0.001));
+        if (shadow_check(p, l)) {
             continue;
         }
         
         // Calculate diffuse intensity of surface for this one light
         // making sure not to have negative values.
-        I_tmp = max(0, v3_dotprod(ip.n, l));
+        I_diff += li.intensity * max(0, v3_dotprod(ip.n, l));  
         
-        // Accumulate light over all lights.
-        I_diff += I_tmp * li.intensity;  
-        
-        // Calculate half vector
+        // Calculate half vector h
         vec3 h = v3_normalize(v3_add(ip.i, l));
         
-        // determine Phong component.
+        // determine Phong component using h.
         I_spec += pow(v3_dotprod(ip.n, h), alpha) * li.intensity;
     }
     
@@ -140,9 +137,9 @@ shade_blinn_phong(intersection_point ip)
 vec3
 shade_reflection(intersection_point ip)
 {
-    vec3 noise;
-    
+    vec3 offset;   
     float I = 0, I_tmp = 0;
+    
     for (int i = 0; i < scene_num_lights; i++) {
         // For each light, get its position and intensity.
         light li = scene_lights[i];
@@ -151,8 +148,8 @@ shade_reflection(intersection_point ip)
         vec3 l = v3_normalize(v3_subtract(li.position, ip.p)); 
         
         // Check whether this l vector is obstructed by an object.
-        noise = v3_multiply(l, 0.001);
-        if (shadow_check(v3_add(ip.p, noise), l)) {
+        offset = v3_multiply(l, 0.001);
+        if (shadow_check(v3_add(ip.p, offset), l)) {
             continue;
         }
         
@@ -166,21 +163,21 @@ shade_reflection(intersection_point ip)
     // Add ambient component
     I += scene_ambient_light;
     
-    // Determine reflection ray
-    float dot = v3_dotprod(ip.i, ip.n);
-    vec3 r = v3_multiply(ip.n, 2*dot);
-    r = v3_subtract(r, ip.i);
+    // Compute final matte color component
+    vec3 c_matte = v3_multiply(v3_create(1, 1, 1), I);
     
-    vec3 z = v3_create(ip.p.x, ip.p.y, ip.p.z);
+    // Determine reflection ray.
+    vec3 r = v3_subtract(v3_multiply(ip.n, 2*v3_dotprod(ip.i, ip.n)), ip.i);
     
-    vec3 c_ref = ray_color(0, v3_create(1, 1, 1), r);
+    // Determine reflection color (with slight offset to solve self-reflection problem).
+    vec3 p = v3_add(ip.p, v3_multiply(r, 0.001));
+    vec3 c_refl = ray_color(ip.ray_level + 1, p, r);
     
-    
-    // Combine with diffuse color coefficients
-    vec3 c_f = v3_multiply(v3_create(1, 1, 1), I);
+    // Combine matte and reflection components using 75/25 split
+    vec3 c = v3_add(v3_multiply(c_matte, 0.75), v3_multiply(c_refl, 0.25));
     
     // Clip final color if values exceed 1.0
-    return clip(c_f);
+    return clip(c);
 }
 
 // Returns the shaded color for the given point to shade.
