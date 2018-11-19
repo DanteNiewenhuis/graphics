@@ -125,6 +125,8 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
   float d20 = f(x2, y2, x0, y0, x_min, y_min);
   
   startingPoint = x_min;
+  int endPoint = x_max;
+  int endPointSet = 0;
 
   // Loop though bounding box and fill in pixels if in triangle 
   // according to the barycentric coordinates apha, beta and gamma.
@@ -137,7 +139,15 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
     inTriangle = 0;
     
     // Loop through row of pixels, compute barycentric coordinates and fill in.
-    for (x = startingPoint; x <= x_max; x++) {
+    for (x = startingPoint; x <= endPoint; x++) {
+      if (inTriangle && x < (endPoint - 2) && endPointSet) {
+        PutPixel(x, y, 255,255,255);
+        // PutPixel(x, y, r, g, b);
+        new_d12 += d12_x_update;
+        new_d20 += d20_x_update;
+        continue;
+      }
+
       alpha = new_d12 / fa;
       beta = new_d20 / fb;
       gamma = 1.0 - (alpha + beta);
@@ -167,11 +177,15 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
         }
         // Stop the loop if the end of the trianglerow is reached.
         else if (inTriangle) {
+          endPoint = x;
+          endPointSet = 1;
           break;
         }
       }
       // Stop the loop if the end of the trianglerow is reached.
       else if (inTriangle) {
+        endPoint = x;
+        endPointSet = 1;
         break;
       }
       // Update d12 and d20 for moving in the x-direction.
@@ -183,6 +197,10 @@ draw_triangle_optimized(float x0, float y0, float x1, float y1, float x2, float 
       if (!inTriangle) {
           d12 += d12_x_update;
           d20 += d20_x_update;
+      }
+
+      if (x == endPoint && inTriangle) {
+          endPoint++;
       }
     }
 

@@ -40,7 +40,7 @@ const int   framebuffer_height = 64;
 const int   zoomed_pixel_size = 7;
 
 int     screen_width, screen_height;
-int     draw_optimized = 0;
+int     draw_optimized = 1;
 int     zoom = 1;
 int     scene = 1;
 int     draw_corners = 0;
