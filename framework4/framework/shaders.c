@@ -21,6 +21,27 @@
 #include "quat.h"
 #include "constants.h"
 
+float min(float x, float y) {
+    if (x < y) {
+        return x;
+    }
+    return y;
+}
+
+float max(float x, float y) {
+    if (x > y) {
+        return x;
+    }
+    return y;
+}
+
+vec3 clip(vec3 v) {
+    v.x = min(v.x, 1.0);
+    v.y = min(v.y, 1.0);
+    v.z = min(v.z, 1.0);
+    return v;
+}
+
 // shade_constant()
 //
 // Always return the same color. This shader does no real computations
@@ -36,13 +57,84 @@ shade_constant(intersection_point ip)
 vec3
 shade_matte(intersection_point ip)
 {
-    return v3_create(1, 0, 0);
+    vec3 noise;
+    
+    float I = 0, I_tmp = 0;
+    for (int i = 0; i < scene_num_lights; i++) {
+        // For each light, get its position and intensity.
+        light li = scene_lights[i];
+        
+        // Determine unit vector pointing towards the lamp.
+        vec3 l = v3_normalize(v3_subtract(li.position, ip.p)); 
+        
+        // Check whether this l vector is obstructed by an object.
+        noise = v3_multiply(l, 0.001);
+        if (shadow_check(v3_add(ip.p, noise), l)) {
+            continue;
+        }
+        
+        // Calculate intensity of surface for this one light.
+        I_tmp = max(0, v3_dotprod(ip.n, l));
+        
+        // Accumulate light over all lights.
+        I += I_tmp * li.intensity;    
+    }
+    
+    // Add ambient component
+    I += scene_ambient_light;
+    
+    // Combine with diffuse color coefficients
+    vec3 c_f = v3_multiply(v3_create(1, 1, 1), I);
+    
+    // Clip final color if values exceed 1.0
+    return clip(c_f);
 }
 
 vec3
 shade_blinn_phong(intersection_point ip)
 {
-    return v3_create(1, 0, 0);
+	vec3 noise;
+    vec3 cd = v3_create(1, 0, 0);
+    vec3 cs = v3_create(1, 1, 1);
+    
+    float alpha = 50, kd = 0.8, ks = 0.5;
+    
+    // Accumulate diffuse and specular components for each light.
+    float I_diff = 0, I_spec = 0, I_tmp = 0;
+    for (int i = 0; i < scene_num_lights; i++) {
+        light li = scene_lights[i];
+        
+        // Determine vector l pointing towards the lamp.
+        vec3 l = v3_subtract(li.position, ip.p); 
+        l = v3_normalize(l);
+        
+        // Check whether this l vector is obstructed by an object.
+        noise = v3_multiply(l, 0.001);
+        if (shadow_check(v3_add(ip.p, noise), l)) {
+            continue;
+        }
+        
+        // Calculate diffuse intensity of surface for this one light
+        // making sure not to have negative values.
+        I_tmp = max(0, v3_dotprod(ip.n, l));
+        
+        // Accumulate light over all lights.
+        I_diff += I_tmp * li.intensity;  
+        
+        // Calculate half vector
+        vec3 h = v3_normalize(v3_add(ip.i, l));
+        
+        // determine Phong component.
+        I_spec += pow(v3_dotprod(ip.n, h), alpha) * li.intensity;
+    }
+    
+    // Add kd and ambient component
+    I_diff = kd*I_diff + scene_ambient_light;
+    I_spec = ks*I_spec; 
+    
+    // Combine specular with diffuse color coefficients
+    vec3 cf = v3_add(v3_multiply(cd, I_diff), v3_multiply(cs, I_spec));
+    return clip(cf);
 }
 
 vec3

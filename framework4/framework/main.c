@@ -412,18 +412,35 @@ ray_trace(void)
     image_plane_height = 2.0 * tan(0.5*VFOV/180*M_PI);
     image_plane_width = image_plane_height * (1.0 * framebuffer_width / framebuffer_height);
 
-    // ...
-    // ...
-    // ...
+    // Precompute the center of the near-plane.
+    float near_center_x = image_plane_width / 2;
+    float near_center_y = image_plane_height / 2;
+    
+    // Precompute scaling of camera x and y axis.
+    float p2c_scale_x = (image_plane_width / framebuffer_width);
+    float p2c_scale_y = (image_plane_height / framebuffer_height);
+    
+    vec3 u, v, ray_dir;
+    float du, dv;
 
     // Loop over all pixels in the framebuffer
     for (j = 0; j < framebuffer_height; j++)
     {
         for (i = 0; i < framebuffer_width; i++)
         {
-            // ...
-            // ...
-            // ...
+            // Convert pixel coordinates to camera coordinates using the
+            // pre-computed transformations.
+            du = (i + 0.5) * p2c_scale_x - near_center_x;
+            dv = (j + 0.5) * p2c_scale_y - near_center_y;
+            
+            // Scale right_vector, up_vector and forward_vector to obtain 
+            // direction of ray in world coordinates.
+            u = v3_multiply(right_vector, du);
+            v = v3_multiply(up_vector, dv);
+            ray_dir = v3_add(u, v3_add(v, forward_vector));
+            
+            // Determine color using ray_color().
+            color = ray_color(0, scene_camera_position, ray_dir);
 
             // Output pixel color
             put_pixel(i, j, color.x, color.y, color.z);
