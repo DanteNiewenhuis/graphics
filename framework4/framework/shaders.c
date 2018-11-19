@@ -140,7 +140,47 @@ shade_blinn_phong(intersection_point ip)
 vec3
 shade_reflection(intersection_point ip)
 {
-    return v3_create(1, 0, 0);
+    vec3 noise;
+    
+    float I = 0, I_tmp = 0;
+    for (int i = 0; i < scene_num_lights; i++) {
+        // For each light, get its position and intensity.
+        light li = scene_lights[i];
+        
+        // Determine unit vector pointing towards the lamp.
+        vec3 l = v3_normalize(v3_subtract(li.position, ip.p)); 
+        
+        // Check whether this l vector is obstructed by an object.
+        noise = v3_multiply(l, 0.001);
+        if (shadow_check(v3_add(ip.p, noise), l)) {
+            continue;
+        }
+        
+        // Calculate intensity of surface for this one light.
+        I_tmp = max(0, v3_dotprod(ip.n, l));
+        
+        // Accumulate light over all lights.
+        I += I_tmp * li.intensity;    
+    }
+    
+    // Add ambient component
+    I += scene_ambient_light;
+    
+    // Determine reflection ray
+    float dot = v3_dotprod(ip.i, ip.n);
+    vec3 r = v3_multiply(ip.n, 2*dot);
+    r = v3_subtract(r, ip.i);
+    
+    vec3 z = v3_create(ip.p.x, ip.p.y, ip.p.z);
+    
+    vec3 c_ref = ray_color(0, v3_create(1, 1, 1), r);
+    
+    
+    // Combine with diffuse color coefficients
+    vec3 c_f = v3_multiply(v3_create(1, 1, 1), I);
+    
+    // Clip final color if values exceed 1.0
+    return clip(c_f);
 }
 
 // Returns the shaded color for the given point to shade.
