@@ -385,10 +385,10 @@ setup_camera(void)
 void
 ray_trace(void)
 {
-    vec3    forward_vector, right_vector, up_vector;
-    int     i, j;
-    float   image_plane_width, image_plane_height;
-    vec3    color;
+    vec3    forward_vector, right_vector, up_vector, u, v, ray_dir;
+    int     i, j, k;
+    float   image_plane_width, image_plane_height, du, dv;
+    vec3    new_color, color;
     char    buf[128];
 
     struct timeval  t0, t1;
@@ -413,37 +413,53 @@ ray_trace(void)
     image_plane_width = image_plane_height * (1.0 * framebuffer_width / framebuffer_height);
 
     // Precompute the center of the near-plane.
-    float near_center_x = image_plane_width / 2;
-    float near_center_y = image_plane_height / 2;
+    float center_x = image_plane_width / 2;
+    float center_y = image_plane_height / 2;
     
     // Precompute scaling of camera x and y axis.
-    float p2c_scale_x = (image_plane_width / framebuffer_width);
-    float p2c_scale_y = (image_plane_height / framebuffer_height);
+    float scale_x = (image_plane_width / framebuffer_width);
+    float scale_y = (image_plane_height / framebuffer_height);
     
-    vec3 u, v, ray_dir;
-    float du, dv;
+    // (Optional) Set up anti-aliasing (4 subpixels with slight offsets).
+    int n_rays = 4;
+    float i_offsets[4] = {0.25, 0.25, -0.25, -0.25};
+	float j_offsets[4] = {0.25, -0.25, 0.25, -0.25};
+    if (!do_antialiasing) {
+		i_offsets[0] = 0.0;
+		j_offsets[0] = 0.0;
+		n_rays = 1;
+	}
 
     // Loop over all pixels in the framebuffer
     for (j = 0; j < framebuffer_height; j++)
     {
         for (i = 0; i < framebuffer_width; i++)
         {
-            // Convert pixel coordinates to camera coordinates using the
-            // pre-computed transformations.
-            du = (i + 0.5) * p2c_scale_x - near_center_x;
-            dv = (j + 0.5) * p2c_scale_y - near_center_y;
+        	// Define color accumulator for anti-aliasing.
+        	color = v3_create(0, 0, 0);
+        	
+        	// Shoot all rays.
+        	for (k = 0; k < n_rays; k++) 
+        	{
+		    	// Convert pixel coordinates to camera coordinates using the
+		        // pre-computed transformations.
+		        du = (i + 0.5 + i_offsets[k]) * scale_x - center_x;
+		        dv = (j + 0.5 + j_offsets[k]) * scale_y - center_y;
+		        
+		        // Scale right_vector, up_vector and forward_vector to obtain 
+		        // direction of ray in world coordinates.
+		        u = v3_multiply(right_vector, du);
+		        v = v3_multiply(up_vector, dv);
+		        ray_dir = v3_add(u, v3_add(v, forward_vector));
+		        
+		        // Determine color using ray_color().
+		        new_color = ray_color(0, scene_camera_position, ray_dir);
+		        color = v3_add(color, new_color);
+            }
             
-            // Scale right_vector, up_vector and forward_vector to obtain 
-            // direction of ray in world coordinates.
-            u = v3_multiply(right_vector, du);
-            v = v3_multiply(up_vector, dv);
-            ray_dir = v3_add(u, v3_add(v, forward_vector));
-            
-            // Determine color using ray_color().
-            color = ray_color(0, scene_camera_position, ray_dir);
-
-            // Output pixel color
-            put_pixel(i, j, color.x, color.y, color.z);
+            // Output pixel color.
+            color = v3_multiply(color, (float) 1 / n_rays);
+		    put_pixel(i, j, color.x, color.y, color.z);
         }
 
         sprintf(buf, "Ray-tracing ::: %.0f%% done", 100.0*j/framebuffer_height);
@@ -974,3 +990,4 @@ main(int argc, char **argv)
 
     return 1;
 }
+
