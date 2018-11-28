@@ -179,6 +179,34 @@ static int
 find_first_intersected_bvh_triangle(intersection_point* ip,
     vec3 ray_origin, vec3 ray_direction)
 {
+    bvh_node *node;
+    node = bvh_root;
+    while (!node->is_leaf) {
+        printf("test\n");
+        bvh_node *left_child = inner_node_left_child(node);
+        bvh_node *right_child = inner_node_right_child(node);
+
+        // if ray in boundingbox
+        // node = new node
+
+        // if (ray in left_child) {
+        //     node = left_child;
+        // }
+
+        // else {
+        //     node = right_child;
+        // }
+    }
+
+    int num_triangles = leaf_node_num_triangles(node);
+    triangle *triangles = leaf_node_triangles(node);
+
+    for (int i = 0; i < num_triangles; i++) {
+        // if (ray in triangle) {
+            // set ip
+        // }
+    }   
+
     return 0;
 }
 
