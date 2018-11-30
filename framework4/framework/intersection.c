@@ -178,22 +178,23 @@ ray_intersects_sphere(intersection_point* ip, sphere sph,
 int traverse_bvh(intersection_point* ip, bvh_node* node, 
 				vec3 ray_origin, vec3 ray_direction, float* t0, float* t1) 
 {
-	// If node is a leaf, then update t and tri if t_new < t for all node tris.
+	// If node is a leaf node, check triangles.
 	if (node->is_leaf) {
-		// Get info about triangles in the leaf node.
+	
 		int n_tris = leaf_node_num_triangles(node);
 		triangle* tris = leaf_node_triangles(node);
 		intersection_point ip2;
 		
-		// Find intersections between ray and triangle for each triangle.
+		// Find intersections between ray and triangle for each triangle in bbox.
 		for (int i = 0; i < n_tris; i++) {
         	if (ray_intersects_triangle(&ip2, tris[i], ray_origin, ray_direction)) {
-        		// If we find a triangle closer than before, update global ip.
+        	
+        		// If we find a triangle closer than before, then update ip.
         		if (ip2.t < ip->t) {
         			*ip = ip2;
         			
-        			// Update t1 such that other nodes with an intersection with 
-        			// a higher t value are discarded later on.
+        			// Update t1 such that remaining nodes with an intersection 
+        			// with a higher t_min value are discarded.
         			*t1 = ip2.t;
         		}
         	}
@@ -201,14 +202,16 @@ int traverse_bvh(intersection_point* ip, bvh_node* node,
 		return 0;
 	}
 	
-	// If not a leaf, get its children.
+	// If not a leaf, get the node's left and right child.
 	bvh_node* left_node = inner_node_left_child(node);
 	bvh_node* right_node = inner_node_right_child(node);
 	
-	// TODO: pick most likely of the two nodes first!
+	// Compute min and max intersection with children.
 	float t_min_left, t_max_left, t_min_right, t_max_right;
-	int left_inter = bbox_intersect(&t_min_left, &t_max_left, left_node->bbox, ray_origin, ray_direction, *t0, *t1);
-	int right_inter = bbox_intersect(&t_min_right, &t_max_right, right_node->bbox, ray_origin, ray_direction, *t0, *t1);
+	int left_inter = bbox_intersect(&t_min_left, &t_max_left, left_node->bbox, 
+	                                ray_origin, ray_direction, *t0, *t1);
+	int right_inter = bbox_intersect(&t_min_right, &t_max_right, right_node->bbox, 
+	                                ray_origin, ray_direction, *t0, *t1);
 	
 	// If there is an intersection with the child boxes in range t0 to t1, then 
 	// call traverse_bvh on that node as the root.
