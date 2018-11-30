@@ -60,9 +60,9 @@ shade_matte(intersection_point ip)
     vec3 noise;
     
     float I = 0, I_tmp = 0;
+    light li;
     for (int i = 0; i < scene_num_lights; i++) {
-        // For each light, get its position and intensity.
-        light li = scene_lights[i];
+        li = scene_lights[i];
         
         // Determine unit vector pointing towards the lamp.
         vec3 l = v3_normalize(v3_subtract(li.position, ip.p)); 

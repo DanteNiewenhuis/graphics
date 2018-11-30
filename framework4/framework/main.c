@@ -399,16 +399,14 @@ ray_trace(void)
 
     num_rays_shot = num_shadow_rays_shot = num_triangles_tested = num_bboxes_tested = 0;
 
-    // Compute camera coordinate system from camera position
-    // and look-at point
+    // Compute camera coordinate system from camera position and look-at point
     up_vector = v3_create(0, 0, 1);
     forward_vector = v3_normalize(v3_subtract(scene_camera_lookat, scene_camera_position));
     right_vector = v3_normalize(v3_crossprod(forward_vector, up_vector));
     up_vector = v3_crossprod(forward_vector, right_vector);
 
-    // Compute size of image plane from the chosen field-of-view
-    // and image aspect ratio. This is the size of the plane at distance
-    // of one unit from the camera position.
+    // Compute size of image plane from the chosen field-of-view and image aspect ratio. 
+    // This is the size of the plane at distance of one unit from the camera position.
     image_plane_height = 2.0 * tan(0.5*VFOV/180*M_PI);
     image_plane_width = image_plane_height * (1.0 * framebuffer_width / framebuffer_height);
 
