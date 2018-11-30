@@ -68,7 +68,7 @@ shade_matte(intersection_point ip)
         vec3 l = v3_normalize(v3_subtract(li.position, ip.p)); 
         
         // Check whether this l vector is obstructed by an object.
-        noise = v3_multiply(l, 0.001);
+        noise = v3_multiply(l, 0.0001);
         if (shadow_check(v3_add(ip.p, noise), l)) {
             continue;
         }
@@ -109,7 +109,7 @@ shade_blinn_phong(intersection_point ip)
         l = v3_normalize(l);
         
         // Check whether this l vector is obstructed by an object.
-        p = v3_add(ip.p, v3_multiply(l, 0.001));
+        p = v3_add(ip.p, v3_multiply(l, 0.0001));
         if (shadow_check(p, l)) {
             continue;
         }
@@ -148,7 +148,7 @@ shade_reflection(intersection_point ip)
         vec3 l = v3_normalize(v3_subtract(li.position, ip.p)); 
         
         // Check whether this l vector is obstructed by an object.
-        offset = v3_multiply(l, 0.001);
+        offset = v3_multiply(l, 0.0001);
         if (shadow_check(v3_add(ip.p, offset), l)) {
             continue;
         }
