@@ -175,61 +175,86 @@ ray_intersects_sphere(intersection_point* ip, sphere sph,
 //
 // Returns 0 if there are no intersections
 
-static int
-find_first_intersected_bvh_triangle(intersection_point* ip,
-    vec3 ray_origin, vec3 ray_direction)
+int traverse_bvh(intersection_point* ip, bvh_node* node, 
+				vec3 ray_origin, vec3 ray_direction, float* t0, float* t1) 
 {
-    bvh_node *node;
-    node = bvh_root;
-    float closest_distance = 100000000000;
-    float t0 = 0, t1 = 10000000000;
-    // printf("start bvh_triangle_helper\n");
-    return bvh_triangle_helper(ip, ray_origin, ray_direction, node, t0, t1, &closest_distance);
+	// If node is a leaf, then update t and tri if t_new < t for all node tris.
+	if (node->is_leaf) {
+		// Get info about triangles in the leaf node.
+		int n_tris = leaf_node_num_triangles(node);
+		triangle* tris = leaf_node_triangles(node);
+		intersection_point ip2;
+		
+		// Find intersections between ray and triangle for each triangle.
+		for (int i = 0; i < n_tris; i++) {
+        	if (ray_intersects_triangle(&ip2, tris[i], ray_origin, ray_direction)) {
+        		// If we find a triangle closer than before, update global ip.
+        		if (ip2.t < ip->t) {
+        			*ip = ip2;
+        			
+        			// Update t1 such that other nodes with an intersection with 
+        			// a higher t value are discarded later on.
+        			*t1 = ip2.t;
+        		}
+        	}
+		}
+		return 0;
+	}
+	
+	// If not a leaf, get its children.
+	bvh_node* left_node = inner_node_left_child(node);
+	bvh_node* right_node = inner_node_right_child(node);
+	
+	// TODO: pick most likely of the two nodes first!
+	float t_min_left, t_max_left, t_min_right, t_max_right;
+	int left_inter = bbox_intersect(&t_min_left, &t_max_left, left_node->bbox, ray_origin, ray_direction, *t0, *t1);
+	int right_inter = bbox_intersect(&t_min_right, &t_max_right, right_node->bbox, ray_origin, ray_direction, *t0, *t1);
+	
+	// If there is an intersection with the child boxes in range t0 to t1, then 
+	// call traverse_bvh on that node as the root.
+	if (left_inter && right_inter && t_min_left < t_min_right) {
+		traverse_bvh(ip, left_node, ray_origin, ray_direction, t0, t1);
+		if (*t1 > t_min_right) {
+		    traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
+		}
+		
+	} else if (left_inter && right_inter && t_min_left >= t_min_right) {
+		traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
+		if (*t1 > t_min_left) {
+		    traverse_bvh(ip, left_node, ray_origin, ray_direction, t0, t1);
+		}
+	} else if (left_inter) {
+	    traverse_bvh(ip, left_node, ray_origin, ray_direction, t0, t1);
+	    
+	} else if (right_inter) {
+	    traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
+	}
+	
+	return 0;
 }
 
-int bvh_triangle_helper(intersection_point *ip, vec3 ray_origin, 
-                        vec3 ray_direction, bvh_node* node, float t0, float t1, float *closest_distance) {
-
-    if (node->is_leaf) {
-        int num_triangles = leaf_node_num_triangles(node);
-        triangle *triangles = leaf_node_triangles(node);
-        triangle closest_triangle;
-        intersection_point current_ip = *ip; 
-        int found_triangle = 0;
-
-        for (int i = 0; i < num_triangles; i++) {
-            if (ray_intersects_triangle(ip, triangles[i], ray_origin, ray_direction)) {
-                if (ip->t < *closest_distance) {
-                    found_triangle = 1;
-                    *closest_distance = ip->t;
-                    closest_triangle = triangles[i];
-                }
-            }
-        }   
-
-        if (found_triangle) {
-            ray_intersects_triangle(ip, closest_triangle, ray_origin, ray_direction);
-            return 1;
-        }
-
-        ip = &current_ip;
+static int
+find_first_intersected_bvh_triangle(intersection_point* ip, vec3 ray_origin, 
+									vec3 ray_direction)
+{
+    float t0 = 0, t1 = C_INFINITY;
+    float t_min, t_max;
+    
+    ip->t = C_INFINITY;
+    
+    // Check for intersection with root node.
+    if (!bbox_intersect(&t_min, &t_max, bvh_root->bbox, ray_origin, ray_direction, t0, t1)) {
         return 0;
     }
-
-    bvh_node *left_child = inner_node_left_child(node); 
-    bvh_node *right_child = inner_node_right_child(node);
-    int found_intersect = 0;
-
-    // printf("bvh_triangle_helper => next nodes\n");
-    if (bbox_intersect(&t0, &t1, left_child->bbox, ray_origin, ray_direction, t0, t1)) {
-        found_intersect += bvh_triangle_helper(ip, ray_origin, ray_direction, left_child, t0, t1, closest_distance);
-    }
-
-    if (bbox_intersect(&t0, &t1, right_child->bbox, ray_origin, ray_direction, t0, t1)) {
-        found_intersect += bvh_triangle_helper(ip, ray_origin, ray_direction, right_child, t0, t1, closest_distance);
-    }
-
-    return found_intersect;
+    
+    // Traverse the remainder of tree.
+    traverse_bvh(ip, bvh_root, ray_origin, ray_direction, &t0, &t1);
+    
+    // If t is still infinity (not updated), then no triangle intersection.
+    if (ip->t < C_INFINITY) {
+    	return 1;
+    } 
+   	return 0;
 }
 
 // Returns the nearest hit of the given ray with objects in the scene
