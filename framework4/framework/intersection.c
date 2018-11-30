@@ -213,23 +213,30 @@ int traverse_bvh(intersection_point* ip, bvh_node* node,
 	int right_inter = bbox_intersect(&t_min_right, &t_max_right, right_node->bbox, 
 	                                ray_origin, ray_direction, *t0, *t1);
 	
-	// If there is an intersection with the child boxes in range t0 to t1, then 
-	// call traverse_bvh on that node as the root.
-	if (left_inter && right_inter && t_min_left < t_min_right) {
-		traverse_bvh(ip, left_node, ray_origin, ray_direction, t0, t1);
-		if (*t1 > t_min_right) {
-		    traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
-		}
-		
-	} else if (left_inter && right_inter && t_min_left >= t_min_right) {
-		traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
-		if (*t1 > t_min_left) {
+	if (left_inter && right_inter) { 
+	    if (t_min_left < t_min_right) {
+	        // If bbox of left child is closest, do left child node first.
 		    traverse_bvh(ip, left_node, ray_origin, ray_direction, t0, t1);
+		    
+		    // Check whether we should still traverse the right given updated
+		    // t1 bound from the left branch.
+		    if (t_min_right < *t1) {
+		        traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
+		    }
+		} else {
+		    // If right bbox is closer, do right bbox first.
+		    traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
+		    
+		    // Check whether doing the left node is still useful.
+		    if (t_min_left < *t1) {
+		        traverse_bvh(ip, left_node, ray_origin, ray_direction, t0, t1);
+		    }
 		}
 	} else if (left_inter) {
+	    // If only the left bbox is intersected, do that one.
 	    traverse_bvh(ip, left_node, ray_origin, ray_direction, t0, t1);
-	    
 	} else if (right_inter) {
+	    // If only the right bbox is intersected, do the right.
 	    traverse_bvh(ip, right_node, ray_origin, ray_direction, t0, t1);
 	}
 	
