@@ -193,10 +193,11 @@ void FillArrayWithIsosurface(void)
 	cell c;
 	
 	int n;
-	for (int i = 0; i < nx; i++) {
-		for (int j = 0; j < ny; j++) {
-			for (int k = 0; k < nz; k++) {
-				triangle triangles[12]; 
+	for (int i = 0; i < nx-1; i++) {
+		for (int j = 0; j < ny-1; j++) {
+			for (int k = 0; k < nz-1; k++) {
+		
+				triangle triangles[12];
 				c = get_cell(i, j, k);
 				n = generate_cell_triangles(triangles, c, isovalue);
 			
