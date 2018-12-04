@@ -38,6 +38,16 @@ cell
 get_cell(int i, int j, int k)
 {
     cell c;
+
+    int n = 0;
+    for (int dk = k; dk < k + 2; dk++) {
+        for (int dj = j; dj < j + 2; dj++) {
+            for (int di = i; di < i + 2; di++, n++) {
+                c.p[n] = v3_create(di*sizex, dj*sizey, dk*sizez);
+                c.value[n] = volume[voxel2idx(di, dj, dk)];
+            }
+        }
+    }
     return c;
 }
 
