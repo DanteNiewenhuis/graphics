@@ -23,8 +23,17 @@ interpolate_points(unsigned char isovalue, vec3 p1, vec3 p2, unsigned char v1, u
 {
     /* Initially, simply return the midpoint between p1 and p2.
        So no real interpolation is done yet */
-
-    return v3_add(v3_multiply(p1, 0.5), v3_multiply(p2, 0.5));
+       
+    // Calculate distance between points.
+    float d1 = fabs(v1 - isovalue);
+    float d2 = fabs(v2 - isovalue);
+    
+    // Normalize distances such that d1 + d2 = 1.
+    float norm = d1 + d2;
+    d1 = d1 / norm;
+    d2 = d2 / norm;
+    
+    return v3_add(v3_multiply(p1, d2), v3_multiply(p2, d1));
 }
 
 /* Using the given iso-value generate triangles for the tetrahedron
@@ -61,17 +70,17 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
 	int n_pts = 0;
 	
 	// Loop though edges.
-	for (int i = 1; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			// If BW-edge, then interpolate the point on the edge.
 			if (i > j && ((b[i] && !b[j]) || (!b[i] && b[j]))) {
 				vec3 p_i = c.p[map[i]];
 				vec3 p_j = c.p[map[j]];
 				
-				// unsigned char s_i = c.value[map[i]];
-				// unsigned char s_j = c.value[map[j]];
+				unsigned char s_i = c.value[map[i]];
+				unsigned char s_j = c.value[map[j]];
 				
-				pts[n_pts] = interpolate_points(isovalue, p_i, p_j, 0, 0);
+				pts[n_pts] = interpolate_points(isovalue, p_i, p_j, s_i, s_j);
 				n_pts++;
 			}
 		}
@@ -143,3 +152,9 @@ generate_cell_triangles(triangle *triangles, cell c, unsigned char isovalue)
 	
 	return n;
 }
+
+
+
+
+
+
