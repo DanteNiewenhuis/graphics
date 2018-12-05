@@ -73,7 +73,6 @@ void AddVertexToArray(vec3 v, vec3 n)
     vertices[3*num_vertices_in_array+1] = v.y;
     vertices[3*num_vertices_in_array+2] = v.z;
 
-    printf("normal => x: %f, y: %f, z: %f\n", n.x, n.y, n.z);
     normals[3*num_vertices_in_array] = n.x;
     normals[3*num_vertices_in_array+1] = n.y;
     normals[3*num_vertices_in_array+2] = n.z;
@@ -192,20 +191,23 @@ void FillArrayWithIsosurface(void)
 	vec3 vec1, vec2, normal;
 	triangle tri;
 	cell c;
-	
+    
+	// Loop through cells.
 	int n;
-	for (int i = 0; i < nx-1; i++) {
-		for (int j = 0; j < ny-1; j++) {
-			for (int k = 0; k < nz-1; k++) {
+	for (int i = 0; i < nx; i++) {
+		for (int j = 0; j < ny; j++) {
+			for (int k = 0; k < nz; k++) {
 		
+				// Get cell and compute triangles.
 				triangle triangles[12];
 				c = get_cell(i, j, k);
 				n = generate_cell_triangles(triangles, c, isovalue);
 			
+				// Fill in triangles.
 				for (int l = 0; l < n; l++) {
 					tri = triangles[l];
 					
-					// Calculate normal for triangle.
+					// calc normal.
 					vec1 = v3_subtract(tri.p[1], tri.p[0]);
 					vec2 = v3_subtract(tri.p[2], tri.p[0]);
 					normal = v3_normalize(v3_crossprod(vec1, vec2));
