@@ -43,9 +43,9 @@ setSpherePoint(GLfloat *p, GLfloat* n, GLfloat* t, int latitude, int longitude,
     p[1] = oy + sin(latitude * dToR) * sy;
     p[2] = oz + cos(longitude * dToR) * cos(latitude * dToR) * sz;
 
-    // Set texture coordinate
-    t[0] = 0.0;
-    t[1] = 0.0;
+    // Set texture coordinate   
+    t[0] = (double) longitude / 360;
+    t[1] = ((double) latitude + 90) / 180;
 
     // calculate normal, this actually doesn't take the sphere size
     // per axis into account, but should still be usable
@@ -133,8 +133,8 @@ setHemispherePoint(GLfloat *p, GLfloat* n, GLfloat* t, int latitude, int longitu
     p[2] = oz + cos(longitude * dToR) * cos(latitude * dToR) * s;
 
     // Set texture coordinate
-    t[0] = 0.0;
-    t[1] = 0.0;
+    t[0] = (double) longitude / 360;
+    t[1] = (double) latitude / 90;
 
     // calculate normal
     n[0] = p[0] - ox;
@@ -221,8 +221,8 @@ setCylinderPoint(GLfloat *p, GLfloat* n, GLfloat* t, int longitude, double heigh
     p[2] = oz + cos(longitude * dToR) * s;
 
     // Set texture coordinate
-    t[0] = 0.0;
-    t[1] = 0.0;
+    t[0] = (double) longitude / 360;
+    t[1] = (double) height;
 
     // calculate normal
     n[0] = p[0] - ox;
