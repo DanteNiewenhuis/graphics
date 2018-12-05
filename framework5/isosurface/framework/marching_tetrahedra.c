@@ -32,6 +32,8 @@ interpolate_points(unsigned char isovalue, vec3 p1, vec3 p2, unsigned char v1, u
     float norm = d1 + d2;
     d1 = d1 / norm;
     d2 = d2 / norm;
+
+	//MAKE OUTLIER DETECTION
     
     return v3_add(v3_multiply(p1, d2), v3_multiply(p2, d1));
 }
@@ -55,61 +57,95 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
 				c.value[v2] > isovalue, 
 				c.value[v1] > isovalue, 
 				c.value[v0] > isovalue};
-	int b_sum = b[0] + b[1] + b[2] + b[3];
-	
-	// If all zeros or all ones, then there are zero triangles.
-	if (b_sum == 0 || b_sum == 4) {
-		return 0;
-	}
-	
-	// Set up mapping from {0, 1, 2, 3} to cell indices.
-	int map[4] = {v3, v2, v1, v0};
-	
-	// Additionally, maintain interpolated edge points.
-	vec3 pts[4];
-	int n_pts = 0;
-	
-	// Loop though edges.
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			// If BW-edge, then interpolate the point on the edge.
-			if (i > j && ((b[i] && !b[j]) || (!b[i] && b[j]))) {
-				vec3 p_i = c.p[map[i]];
-				vec3 p_j = c.p[map[j]];
-				
-				unsigned char s_i = c.value[map[i]];
-				unsigned char s_j = c.value[map[j]];
-				
-				pts[n_pts] = interpolate_points(isovalue, p_i, p_j, s_i, s_j);
-				n_pts++;
-			}
-		}
-	}
-	
-	// If three points have been found, create single triangle.
-	if (n_pts == 3) {
-		triangle tri;
-		tri.p[0] = pts[0];
-		tri.p[1] = pts[1];
-		tri.p[2] = pts[2];
-		
-		triangles[0] = tri;
-		return 1;
-	} 
-	
-	// If four points are found, create two triangles forming a quad.
-	if (n_pts == 4) {
-		triangle tri0, tri1;
-		tri0.p[0] = pts[0];
-		tri0.p[1] = pts[1];
-		tri0.p[2] = pts[2];
-		triangles[0] = tri0;
-		
-		tri1.p[0] = pts[1];
-		tri1.p[1] = pts[2];
-		tri1.p[2] = pts[3];
-		triangles[1] = tri1;
-		return 2;
+	int b_sum = 8 * b[0] + 4 * b[1] + 2* b[2] + b[3];
+	triangle tri0, tri1;
+
+	switch (b_sum) {
+		// 0000, 1111
+		case 0: 
+		case 15: 	return 0;
+
+		// 0001, 1110
+		case 1:
+		case 14:
+			tri0.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			
+			triangles[0] = tri0;
+			return 1;
+
+		// 0010, 1101
+		case 2:
+		case 13: 	
+			tri0.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
+			
+			triangles[0] = tri0;
+			return 0;
+
+		// 0100, 1011
+		case 4:
+		case 11: 	
+			tri0.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+			
+			triangles[0] = tri0;
+			return 0;
+
+		// 1000, 0111
+		case 8:
+		case 7: 	
+			tri0.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], c.value[v3], c.value[v0]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v3], c.p[v2], c.value[v3], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], c.value[v3], c.value[v1]);
+			
+			triangles[0] = tri0;
+			return 0;
+
+		// 0011, 1100
+		case 3:
+		case 12: 	
+			tri0.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			triangles[0] = tri0;
+			
+			tri0.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			triangles[1] = tri1;
+			return 0;
+
+		// 0110, 1001
+		case 6:
+		case 9: 	
+			tri0.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			triangles[0] = tri0;
+			
+			tri0.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			triangles[1] = tri1;
+			return 0;
+
+		// 0101, 1010
+		case 5:
+		case 10: 	
+			tri0.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			triangles[0] = tri0;
+			
+			tri0.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri0.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			tri0.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			triangles[1] = tri1;
+			return 0;
 	}
 		
 	return 0;
@@ -128,10 +164,10 @@ int
 generate_cell_triangles(triangle *triangles, cell c, unsigned char isovalue)
 {
 	int tetras[6][4] = {{0, 1, 3, 7}, 
-						{0, 1, 5, 7}, 
-						{0, 4, 5, 7}, 
 						{0, 2, 6, 7}, 
+						{0, 1, 5, 7}, 
 						{0, 2, 3, 7}, 
+						{0, 4, 5, 7}, 
 						{0, 4, 6, 7}};
 						
 	int v0, v1, v2, v3;
