@@ -66,72 +66,72 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
 	}
 	
 	else if (B == 1 || B == 14) { // 0001 or 1110 (1 triangle)
-		tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], 1, 1);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], 1, 1);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], 1, 1);
+		tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+		tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
 		triangles[0] = tri1;
 		n = 1;
 	}
 	
 	else if (B == 2 || B == 13) { // 0010 or 1101 (1 triangle)
-		tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], 1, 1);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], 1, 1);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], 1, 1);
+		tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
+		tri1.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
+		tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
 		triangles[0] = tri1;
 		n = 1;
 	}
 	
 	else if (B == 3 || B == 12) { // 0011 or 1100 (2 triangles)
-		tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v1], 1, 1);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], 1, 1);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], 1, 1);
+		tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
+		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+		tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
 		triangles[0] = tri1;
 		
-		tri2.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], 1, 1);
-		tri2.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], 1, 1);
-		tri2.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], 1, 1);
+		tri2.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], c.value[v3], c.value[v0]);
+		tri2.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
+		tri2.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
 		triangles[1] = tri2;
 		n = 2;
 	}
 	
 	else if (B == 4 || B == 11) { // 0100 or 1011 (1 triangle)
-		tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], 1, 1);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], 1, 1);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], 1, 1);
+		tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
+		tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+		tri1.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
 		triangles[0] = tri1;
 		n = 1;
 	}
 	
 	else if (B == 5 || B == 10) { // 0101 or 1010 (2 triangles)
-		tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], 1, 1);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], 1, 1);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v2], 1, 1);
+		tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+		tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v2], c.value[v3], c.value[v2]);
 		triangles[0] = tri1;
 		
-		tri2.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], 1, 1);
-		tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], 1, 1);
-		tri2.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], 1, 1);
+		tri2.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
+		tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+		tri2.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
 		triangles[1] = tri2;
 		n = 2;
 	}
 	
 	else if (B == 6 || B == 9) { // 0110 or 1001 (2 triangles)
-		tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], 1, 1);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v0], 1, 1);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], 1, 1);
+		tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
+		tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
+		tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
 		triangles[0] = tri1;
 		
-		tri2.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], 1, 1);
-		tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], 1, 1);
-		tri2.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], 1, 1);
+		tri2.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
+		tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+		tri2.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], c.value[v3], c.value[v1]);
 		triangles[1] = tri2;
 		n = 2;
 	}
 
 	else if (B == 7 || B == 8) { // 1000 or 0111 (1 triangle)
-		tri1.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], 1, 1);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v3], c.p[v2], 1, 1);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], 1, 1);
+		tri1.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], c.value[v3], c.value[v0]);
+		tri1.p[1] = interpolate_points(isovalue, c.p[v3], c.p[v2], c.value[v3], c.value[v2]);
+		tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], c.value[v3], c.value[v1]);
 		triangles[0] = tri1;
 		n = 1;
 	}
