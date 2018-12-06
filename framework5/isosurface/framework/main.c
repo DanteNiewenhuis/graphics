@@ -5,10 +5,10 @@
  * Date ............ 29.10.2007
  * Created by ...... Paul Melis
  *
- * Student name ....
- * Student email ...
- * Collegekaart ....
- * Date ............
+ * Student name .... Dante Niewenhuis Thomas Bellucci
+ * Student email ... d.niewenhuis@hotmail.com	th.bellucci@gmail.com
+ * Collegekaart .... 11058595	11257245
+ * Date ............ 7 - 12 - 2018
  * Comments ........
  *
  * (always fill in these fields before submitting!!)
@@ -203,15 +203,16 @@ void FillArrayWithIsosurface(void)
 				c = get_cell(i, j, k);
 				n = generate_cell_triangles(triangles, c, isovalue);
 			
-				// Fill in triangles.
+				// Fill in triangles generated for cell.
 				for (int l = 0; l < n; l++) {
 					tri = triangles[l];
 					
-					// calc normal.
+					// Calculate normal vector for triangle face.
 					vec1 = v3_subtract(tri.p[1], tri.p[0]);
 					vec2 = v3_subtract(tri.p[2], tri.p[0]);
 					normal = v3_normalize(v3_crossprod(vec1, vec2));
 					
+					// Add triangle verts with normal to vertex array.
 					for (int x = 0; x < 3; x++) {
 						AddVertexToArray(tri.p[x], normal);
 					}
