@@ -266,7 +266,7 @@ InitGL(void)
             glBindTexture(GL_TEXTURE_2D, texture_names[i]);
             glCheckError("glBindTexture");
 
-			// Replaced GL_CLAMP with GL_REPEAT to get tiling (Assignment 1.2).
+			// Replaced GL_CLAMP with GL_REPEAT to get tiling (Assignment 1.1. & 1.2).
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -279,6 +279,8 @@ InitGL(void)
             //glCheckError("glTexImage2D");
             
             // Mipmap implementation (Assignment 1.2).
+            // Note that gluBuild2DMipmaps is actually not that great:
+            // see https://www.khronos.org/opengl/wiki/Common_Mistakes#Automatic_mipmap_generation
             gluBuild2DMipmaps(GL_TEXTURE_2D, texture_internal_format, width, 
                               height, texture_format, texture_type, image_data);
             glCheckError("gluBuild2DMipmaps");
@@ -444,11 +446,12 @@ DrawGLScene(void)
 
         DrawPolylist(polylistTreeStem);
         
-        // Draw multiple leaf petals (Assignment 1.3).
-        int n_petals = 8;
+        // Draw 5 to 10 leafs (Assignment 1.3).
+        int n_petals = rand() % 6 + 5;
+        int deg = 360.0 / n_petals;
         for (int i = 0; i < n_petals; i++) {
         	glPushMatrix();
-        	glRotatef(i * 360.0 / n_petals, 0, 1, 0);
+        	glRotatef(i * deg, 0, 1, 0);
         	
         	DrawPolylist(polylistTreeLeafs);
         	
