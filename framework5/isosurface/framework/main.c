@@ -191,12 +191,15 @@ void FillArrayWithIsosurface(void)
 	vec3 vec1, vec2, normal;
 	triangle tri;
 	cell c;
+	
+	// set to 1 to remove the ugly plate over the mummy's head.
+	int remove_top = 1;
     
 	// Loop through cells.
 	int n;
 	for (int i = 0; i < nx; i++) {
 		for (int j = 0; j < ny; j++) {
-			for (int k = 0; k < nz; k++) {
+			for (int k = 0; k < nz - remove_top; k++) {
 		
 				// Get cell and compute triangles.
 				triangle triangles[12];
