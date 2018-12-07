@@ -6,7 +6,9 @@ generated in this case.
 
 Answer: If we use linear interpolation and the two 11 (or 00) points have a value equal to
 the iso value, then the quad turns into a line (two points will coincide in one vertex twice).
-is this a bad thing?
+This can be bad, because we make the triangles (making up the quad) degenerate, which may cause
+issues when determining the triangle normal (and hence cause issues in fragment processing or
+rasterization).
 
 Q2:
 We render the isosurface two-sided here, that is, without back-face culling.
@@ -15,14 +17,19 @@ as the inside/back-side of the surface would never be visible. For what
 situation does marching tetrahedra not produce a closed isosurface?
 
 Answer: The case in which the object to be modelled touches the sides of the 3D 
-cell grid (in other words, when there are not enough cells to pad the object with). 
+cell grid (in other words, when there are not enough cells to pad the object with
+on the sides). This happens when you use (nx-1)x(ny-1)x(nz-1) 3D grid of cells for 
+the mummy.128.vtk file. 
 
 Q3:
 What optimizations to the marching tetrahedra algorithm as described in
 Section 2.2 can you think of? Are there computations that are performed
 redundantly? Is there an opportunity for parallel processing?
 
-Answer: computations that are performed redundantly are for example the 
-c.value[index] > isovalue operations. If you imagine a 2x2x2 cube consisting 
-of 8 cells, then the center vertex of this cube is recomputed 8 times. 
-Also, cells and tetrahedra within cells can be evaluated in parallel (in theory).
+Answer: Computations that are performed redundantly are for example the "c.value[index] > isovalue" 
+operations to determine whether a corner of a cell has a value higher than the iso value. If you 
+imagine a 2x2x2 cube consisting of 8 cells, then the center vertex of this 2x2x2 cube is recomputed 
+8 times. It would be a faster to precompute the "value > iso value" computation instead of 
+recomputing it for each cell.
+Also, the cells and tetrahedra within cells can be evaluated in parallel (in theory), because there 
+exists no dependency between cells.
