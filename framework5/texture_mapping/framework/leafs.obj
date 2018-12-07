@@ -1,4 +1,4 @@
-# roof vertices
+# leaf vertices
 v 0.0 -0.05 -0.2
 v 0.0 0.0 0.0
 v 0.0 -0.05 0.2
@@ -11,7 +11,7 @@ v 0.7 -0.45 -0.2
 v 0.8 -0.45 0.0
 v 0.7 -0.45 0.2
 
-# roof polygons (6=banana texture)
+# leaf polygons (6=banana texture)
 
 p 4 6
 0.7 0.7 0.7
