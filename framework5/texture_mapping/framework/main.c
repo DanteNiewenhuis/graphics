@@ -451,6 +451,7 @@ DrawGLScene(void)
         int deg = 360.0 / n_petals;
         for (int i = 0; i < n_petals; i++) {
         	glPushMatrix();
+        	glTranslatef(0, rand_float() / 20, 0);
         	glRotatef(i * deg, 0, 1, 0);
         	
         	DrawPolylist(polylistTreeLeafs);
