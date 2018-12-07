@@ -222,7 +222,11 @@ setCylinderPoint(GLfloat *p, GLfloat* n, GLfloat* t, int longitude, double heigh
 
     // Set texture coordinate
     t[0] = (double) longitude / 360;
-    t[1] = (double) height;
+    // v = height / circumference, because longitude is mappend to [0, 1]
+    // and we do not want stretching.
+    t[1] = (double) height / (2 * M_PI * s);
+    
+    printf("%f %f\n", s, height);
 
     // calculate normal
     n[0] = p[0] - ox;
