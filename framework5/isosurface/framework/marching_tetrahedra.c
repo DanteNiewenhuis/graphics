@@ -60,86 +60,97 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
 	int b0 = c.value[v0] > isovalue;
 	int B = b0 + 2 * b1 + 4 * b2 + 8 * b3;
 	
-	// If all ones or all zeros, then early termination.
-	if (B == 0 || B == 15) {
-		return 0;
-	}
-	
-	// 0001 or 1110 (1 triangle).
-	else if (B == 1 || B == 14) {
-		tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
-		triangles[0] = tri1;
-		n = 1;
-	}
-	
-	// 0010 or 1101 (1 triangle).
-	else if (B == 2 || B == 13) {
-		tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
-		triangles[0] = tri1;
-		n = 1;
-	}
-	
-	// 0011 or 1100 (2 triangles).
-	else if (B == 3 || B == 12) {
-		tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
-		triangles[0] = tri1;
-		
-		tri2.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], c.value[v3], c.value[v0]);
-		tri2.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
-		tri2.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
-		triangles[1] = tri2;
-		n = 2;
-	}
-	// 0100 or 1011 (1 triangle).
-	else if (B == 4 || B == 11) {
-		tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
-		triangles[0] = tri1;
-		n = 1;
-	}
-	
-	// 0101 or 1010 (2 triangles).
-	else if (B == 5 || B == 10) {
-		tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v2], c.value[v3], c.value[v2]);
-		triangles[0] = tri1;
-		
-		tri2.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
-		tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
-		tri2.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
-		triangles[1] = tri2;
-		n = 2;
-	}
-	
-	// 0110 or 1001 (2 triangles).
-	else if (B == 6 || B == 9) {
-		tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
-		triangles[0] = tri1;
-		
-		tri2.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
-		tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
-		tri2.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], c.value[v3], c.value[v1]);
-		triangles[1] = tri2;
-		n = 2;
-	}
+	// determine the configuration of the tetrahedron and make triangles based on it.
+	switch (B) {
 
-	// 1000 or 0111 (1 triangle).
-	else if (B == 7 || B == 8) {
-		tri1.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], c.value[v3], c.value[v0]);
-		tri1.p[1] = interpolate_points(isovalue, c.p[v3], c.p[v2], c.value[v3], c.value[v2]);
-		tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], c.value[v3], c.value[v1]);
-		triangles[0] = tri1;
-		n = 1;
+		// If all ones or all zeros, then early termination. 
+		case 0:
+		case 15: return 0;
+		
+		// 0001 or 1110 (1 triangle).
+		case 1:
+		case 14:
+			tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			triangles[0] = tri1;
+			n = 1;
+			break;
+		
+		// 0010 or 1101 (1 triangle).
+		case 2:
+		case 13:
+			tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
+			tri1.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
+			tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
+			triangles[0] = tri1;
+			n = 1;
+			break;
+
+		// 1000 or 0111 (1 triangle).
+		case 7:
+		case 8:
+			tri1.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], c.value[v3], c.value[v0]);
+			tri1.p[1] = interpolate_points(isovalue, c.p[v3], c.p[v2], c.value[v3], c.value[v2]);
+			tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], c.value[v3], c.value[v1]);
+			triangles[0] = tri1;
+			n = 1;
+			break;
+		
+		// 0011 or 1100 (2 triangles). 
+		case 3: 
+		case 12:
+			tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
+			tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri1.p[2] = interpolate_points(isovalue, c.p[v0], c.p[v2], c.value[v0], c.value[v2]);
+			triangles[0] = tri1;
+			
+			tri2.p[0] = interpolate_points(isovalue, c.p[v3], c.p[v0], c.value[v3], c.value[v0]);
+			tri2.p[1] = interpolate_points(isovalue, c.p[v1], c.p[v2], c.value[v1], c.value[v2]);
+			tri2.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
+			triangles[1] = tri2;
+			n = 2;
+			break;
+
+		// 0100 or 1011 (1 triangle).
+		case 4:
+		case 11:
+			tri1.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
+			tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+			tri1.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
+			triangles[0] = tri1;
+			n = 1;
+			break;
+		
+		// 0101 or 1010 (2 triangles).
+		case 5:
+		case 10:
+			tri1.p[0] = interpolate_points(isovalue, c.p[v0], c.p[v1], c.value[v0], c.value[v1]);
+			tri1.p[1] = interpolate_points(isovalue, c.p[v0], c.p[v3], c.value[v0], c.value[v3]);
+			tri1.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v2], c.value[v3], c.value[v2]);
+			triangles[0] = tri1;
+			
+			tri2.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
+			tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+			tri2.p[2] = interpolate_points(isovalue, c.p[v2], c.p[v1], c.value[v2], c.value[v1]);
+			triangles[1] = tri2;
+			n = 2;
+			break;
+		
+		// 0110 or 1001 (2 triangles).
+		case 6:
+		case 9: 
+			tri1.p[0] = interpolate_points(isovalue, c.p[v1], c.p[v0], c.value[v1], c.value[v0]);
+			tri1.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
+			tri1.p[2] = interpolate_points(isovalue, c.p[v1], c.p[v3], c.value[v1], c.value[v3]);
+			triangles[0] = tri1;
+			
+			tri2.p[0] = interpolate_points(isovalue, c.p[v2], c.p[v0], c.value[v2], c.value[v0]);
+			tri2.p[1] = interpolate_points(isovalue, c.p[v2], c.p[v3], c.value[v2], c.value[v3]);
+			tri2.p[2] = interpolate_points(isovalue, c.p[v3], c.p[v1], c.value[v3], c.value[v1]);
+			triangles[1] = tri2;
+			n = 2;
+			break;
 	}
 
 	// If the opposite case (0001 vs 1110), swap order of points in triangle.
@@ -147,6 +158,7 @@ generate_tetrahedron_triangles(triangle *triangles, unsigned char isovalue, cell
 		vec3 tmp = triangles[0].p[1];
 		triangles[0].p[1] = triangles[0].p[2];
 		triangles[0].p[2] = tmp;
+
 		if (n == 2) {
 			tmp = triangles[1].p[1];
 			triangles[1].p[1] = triangles[1].p[2];
