@@ -23,88 +23,105 @@
 
 #include "levels.h"
 
-unsigned int reso_x = 800, reso_y = 600; // Window size in pixels
-const float world_x = 8.f, world_y = 6.f; // Level (world) size in meters
+unsigned int reso_x = 800, reso_y = 600;
+const float world_x = 8.f, world_y = 6.f;
+const float framerate = 1.0f / 60.0f;
+const int num_iters = 3;
 
 int last_time;
 int frame_count;
 
-// Information about the levels loaded from files will be available in these.
+
+/**********************************
+ * Game State Variables
+ **********************************/
+
+// Define 'entities' for Box2D.
+b2World* world;
+b2Body* ball;
+float gravity_force = -2.0;
+
+// Define current state of the game (paused?, level?, clicks?, etc.)
+int current_level = 0;
+bool pause_game = true;
 unsigned int num_levels;
 level_t *levels;
 
-/**********************************
- * Level / Game State Variables
- **********************************/
+int num_clicks = 0;
+float clicks[4][2];
 
-b2World* world;
-b2Body* ball;
+// Define properties of the ball.
+float ball_radius = 0.3;
+float ball_density = 0.2;
+float ball_friction = 0.2;
+int ball_res = 64;
+float ball_color[3] = {1.0, 0.0, 0.0};
+GLuint ball_vbo;
 
-float gravity_force = 4.0;
+// Define properties of the static and dynamic objects of the level.
+float obj_density = 0.2;
+float obj_friction = 0.2;
+float obj_color[3] = {0.0, 1.0, 0.0};
+std::vector<GLuint> obj_vbos;
+std::vector<int> obj_num_verts;
+std::vector<b2Body*> obj_bodies;
 
-int ball_resolution = 32;
-float ball_friction = 0.5;
-float ball_density = 1.2;
-float ball_radius = 0.2;
-GLuint ball_VBO;
-
-float obj_friction = 0.5;
-float obj_density = 1.2;
-
-int current_level = 0;
-int pause_game = 1;
+// Define properties of finish line (modelled as physics-less circle).
+float finish_color[3] = {0.0, 0.0, 1.0};
+float finish_radius = 0.15;
+int finish_res = 32;
+GLuint finish_vbo;
 point_t finish_pos;
-float finish_radius = 0.1;
-
-int n_clicks = 0;
-int clicks[4][2];
 
 
 /**********************************
  * Level Initialization Functions.
  **********************************/
-
-// Loads the ball into Box2D and OpenGL VBO and VAO.
-void init_ball(level_t level) {	
-	// Set up body
+ 
+void init_ball(level_t level) {
+	// Set up ball body.
 	b2BodyDef ballBodyDef;
 	ballBodyDef.type = b2_dynamicBody;
 	ballBodyDef.position.Set(level.start.x, level.start.y);
 	ball = world->CreateBody(&ballBodyDef);
 	
-	// Set up shape
+	// Set up ball shape.
 	b2CircleShape ballShape;
 	ballShape.m_radius = ball_radius;
 	
-	// Set up fixture
+	// Set up ball fixture.
 	b2FixtureDef ballFixtureDef;
 	ballFixtureDef.shape = &ballShape;
 	ballFixtureDef.density = ball_density;
 	ballFixtureDef.friction = ball_friction;
 	ball->CreateFixture(&ballFixtureDef);
 	
-	// Set up vertices and VBO for ball.
-	GLfloat *vertices = new GLfloat[ball_resolution * 2];
-	vertices[0] = 5.0f;
-	vertices[1] = 5.0f;
-	for (int i = 2; i < ball_resolution * 2; i += 2) {
-		float angle = 2 * M_PI * i / ball_resolution; 
-		vertices[i] = 5+ball_radius * cos(angle);
-		vertices[i+1] = 5+ball_radius * sin(angle);
+	// Initialize array with 2D vertices of ball.
+	GLfloat *ball_verts = new GLfloat[2 * ball_res];
+	ball_verts[0] = 0.0f;
+	ball_verts[1] = 0.0f;
+	for (int i = 2; i < ball_res * 2; i += 2) {
+		float angle = 2 * M_PI * i / ball_res; 
+		ball_verts[i] = ball_radius * cos(angle);
+		ball_verts[i+1] = ball_radius * sin(angle);
 	}
-						  
-	glGenBuffers(1, &ball_VBO);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, ball_VBO);
-	glBufferData(GL_ARRAY_BUFFER, ball_resolution * 2 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
-	
+			  
+	// Allocate a small piece of memory for ball on GPU (VBO).
+	glGenBuffers(1, &ball_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, ball_vbo);
+	glBufferData(GL_ARRAY_BUFFER, ball_res * 2 * sizeof(GLfloat), 
+				 ball_verts, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
-// Initializes level' objects. It is only called for setting up the level. 
 void init_objects(level_t level) {
-	// Loop through polygons in level.
+	// Clear previous level (if it exists).
+	obj_vbos.clear();
+	obj_num_verts.clear();
+	obj_bodies.clear();
+		
+	// Loop through objects in level.
 	for (unsigned int i = 0; i < level.num_polygons; i++) {
 		poly_t poly = level.polygons[i];
 		point_t pos = poly.position;
@@ -115,17 +132,17 @@ void init_objects(level_t level) {
 			pts[j] = b2Vec2(poly.verts[j].x, poly.verts[j].y);
 		}
 		
-		// Create dynamic and static objects from level.
+		// Create dynamic or static body.
 		b2BodyDef objBodyDef;
 		if (poly.is_dynamic) objBodyDef.type = b2_dynamicBody;
 		objBodyDef.position.Set(pos.x, pos.y);
 		b2Body* objBody = world->CreateBody(&objBodyDef);
 			
-		// Set up shape.
+		// Set up obj shape.
 		b2PolygonShape objShape;
 		objShape.Set(pts, poly.num_verts);
 			
-		// Set up fixture.
+		// Set up obj fixture.
 		if (poly.is_dynamic) {
 			b2FixtureDef objFixtureDef;
 			objFixtureDef.shape = &objShape;
@@ -137,130 +154,162 @@ void init_objects(level_t level) {
 			objBody->CreateFixture(&objShape, 0.0f);
 		}
 		
-		// TODO: set up VBO and VAO for objects
-	}
-}
-
-
-// Adds another object to the level using four user selected points.
-void add_object(void) {	
-	// Convert point_t array to b2Vec2 array.
-	b2Vec2 *pts = new b2Vec2[4];
-	for (unsigned int j = 0; j < 4; j++) {
-		int x = world_x * clicks[j][0] / reso_x;
-		int y = world_y - (world_y * clicks[j][1] / reso_y);
-		pts[j] = b2Vec2(x, y);
-	}
-	
-	// TODO: fix spawn!
+		// Flatten 2D array of point_t structs to 1D array of floats.
+		GLfloat *obj_verts = new GLfloat[2 * poly.num_verts];
+		int n = 0;
+		for (unsigned int j = 0; j < poly.num_verts; j++, n++) {
+			obj_verts[n] = poly.verts[j].x;
+			obj_verts[++n] = poly.verts[j].y;
+		}
 		
-	// Create a new dynamic object from these points.
-	b2BodyDef objBodyDef;
-	objBodyDef.type = b2_dynamicBody;
-	objBodyDef.position.Set(0, 0);
-	b2Body* objBody = world->CreateBody(&objBodyDef);
-			
-	b2PolygonShape objShape;
-	objShape.Set(pts, 4);
-			
-	b2FixtureDef objFixtureDef;
-	objFixtureDef.shape = &objShape;
-	objFixtureDef.density = obj_density;
-	objFixtureDef.friction = obj_friction;
-			
-	objBody->CreateFixture(&objFixtureDef);
+		
+		// Allocate a small piece of memory for object on GPU (VBO).
+		GLuint obj_vbo;
+		glGenBuffers(1, &obj_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, obj_vbo);
+		glBufferData(GL_ARRAY_BUFFER, poly.num_verts * 2 * sizeof(GLfloat), 
+					 obj_verts, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		
+		// Store new vbo-identifier, number of verts and bodies for later.
+		obj_vbos.push_back(obj_vbo);
+		obj_num_verts.push_back(poly.num_verts);
+		obj_bodies.push_back(objBody);
+	}
+} 
+
+
+void init_finish(level_t level) {
+	// Set finish position.
+	finish_pos = level.end;
 	
-	// TODO: set up VBO and VAO for new object (or copy new geometry).
+	// Initialize array with 2D vertices of ball.
+	GLfloat *finish_verts = new GLfloat[2 * finish_res];
+	finish_verts[0] = 0.0f;
+	finish_verts[1] = 0.0f;
+	for (int i = 2; i < finish_res * 2; i += 2) {
+		float angle = 2 * M_PI * i / finish_res; 
+		finish_verts[i] = finish_radius * cos(angle);
+		finish_verts[i+1] = finish_radius * sin(angle);
+	}
+			  
+	// Allocate a small piece of memory for ball on GPU (VBO).
+	glGenBuffers(1, &finish_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, finish_vbo);
+	glBufferData(GL_ARRAY_BUFFER, finish_res * 2 * sizeof(GLfloat), 
+				 finish_verts, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
-// Load a given world and convert it into a Box2D world.
 void load_world(unsigned int level_id) {
-    if (level_id >= num_levels) {
-        printf("Warning: level %d does not exist.\n", level_id);
-        return;
-    }
-    
-    // Read world from levels.
-    level_t level = levels[level_id];
-
+	// Get level struct from levels array.
+	level_t level = levels[level_id];
+	
 	// Initialize the world.
-	b2Vec2 gravity(0.0f, -gravity_force);
+	b2Vec2 gravity(0.0, gravity_force);
 	world = new b2World(gravity);
 	
-	// Initialize ball in world.
+	// Initialize each object component of the level.
 	init_ball(level);
-	
-	// Initialize remaining objects in the scene.
 	init_objects(level);
+	init_finish(level);
 	
-	// Define the finish position and pause game.
-	finish_pos = level.end;
-	pause_game = 1;
+	// Keep the game paused while user sets up his level.
+	pause_game = true;
+}
+
+
+int is_counterclockwise(float a[2], float b[2], float c[2]) {
+	float area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+	return area > 0;
+}
+
+void add_new_object(void) {
+	// Check whether recorded four points are wounded counter-clockwise.
+	// in terms of their triangle fan specification ((0, 1, 2) and (0, 2, 3)).
+	int area1 = is_counterclockwise(clicks[0], clicks[1], clicks[2]);
+	int area2 = is_counterclockwise(clicks[0], clicks[2], clicks[3]);
+	
+	if (!area1 && !area2) {
+	
+	} else if (!area1) {
+	
+	} else if (!area2) {
+	
+	}
 }
 
 
 /**********************************
  * Level Drawing Functions.
  **********************************/
- 
-// Draws the ball.
-void draw_circle(float x, float y, float rad, float r, float g, float b) {
-	glColor3f(0.0, 1.0, 0.0);
-	glBindBuffer(GL_ARRAY_BUFFER, ball_VBO);
+
+void draw_ball(void) {
+	// Push translation matrix onto matrix stack.
+	glPushMatrix();
+    glTranslatef(ball->GetPosition().x, ball->GetPosition().y, 0);	
+        	
+	// Draw ball on screen.
+	glColor3f(ball_color[0], ball_color[1], ball_color[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, ball_vbo);
 	glVertexPointer(2, GL_FLOAT, 0, NULL);
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, ball_resolution);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, ball_res);
 	glDisableClientState(GL_VERTEX_ARRAY);
-}
-
-
-// Draws the other objects.
-void draw_polygon(float x, float y, b2PolygonShape* shape, float r, float g, float b) {
-    float x2, y2;
-
-    // Get vertices and number of vertices.
-	int n_vertices = shape->GetVertexCount();
-	b2Vec2* vertices = (b2Vec2*) shape->m_vertices;
 	
-	glColor3f(r, g, b);
-	glBegin(GL_TRIANGLE_FAN);
-    for( int i = 0; i < n_vertices; i++) {
-       x2 = x + vertices[i].x;
-       y2 = y + vertices[i].y;
-       glVertex2f(x2, y2);
-    }
-	glEnd();
+	// Pop translation matrix to return to original state.
+	glPopMatrix();
 }
 
-// Wrapper to draw the entire level (called at each tick).
-void draw_level(void) {
-    // Otherwise, start drawing. Draw finish as a small circle.
-    draw_circle(finish_pos.x, finish_pos.y, finish_radius, 0, 1, 0);
-    
-    /*
-    // Draw physics objects (e.g. ball) of the level.
-    b2Body* body = world->GetBodyList();
-    while (body) {
-    	// Get body shape, type and position.
-    	const b2Vec2 pos = body->GetPosition();
-    	b2Shape* shape = body->GetFixtureList()->GetShape();
-    	int shapeType = shape->GetType();
+void draw_objects(void) {  
+    for (unsigned int i = 0; i < obj_bodies.size(); i++) {
+    	// Get body shape type.
+    	b2Body* body = obj_bodies[i];
+    	int shapeType = body->GetFixtureList()->GetShape()->GetType();
     	
-    	// If of type b2CircleShape, then draw its circle.
-    	if (shapeType == 0) {
-    		draw_circle(pos.x, pos.y, ball_radius, 1, 0, 0);
-    		
-    	// If of type b2PolygonShape, then draw its Polygon.
-    	} else if (shapeType == 2) {
-    		draw_polygon(pos.x, pos.y, (b2PolygonShape*) shape, 0, 0, 1);
+    	// If of type b2PolygonShape, then draw object as polygon.
+    	if (shapeType == 2) {   		
+    		// Push translation and rotation matrix onto matrix stack.
+			glPushMatrix();
+			glTranslatef(body->GetPosition().x, body->GetPosition().y, 0);
+			glRotatef(body->GetAngle(), 0, 0, 1);
+					
+			// Draw ball on screen.
+			glColor3f(obj_color[0], obj_color[1], obj_color[2]);
+			glBindBuffer(GL_ARRAY_BUFFER, obj_vbos[i]);
+			glVertexPointer(2, GL_FLOAT, 0, NULL);
+			
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, obj_num_verts[i]);
+			glDisableClientState(GL_VERTEX_ARRAY);
+			
+			// Pop translation matrix to return to original state.
+			glPopMatrix();
     	}
     	
     	// Go to next object body.
     	body = body->GetNext();
     }
-    */
+}
+
+void draw_finish(void) {
+	// Push translation matrix onto matrix stack.
+	glPushMatrix();
+    glTranslatef(finish_pos.x, finish_pos.y, 0);	
+        	
+	// Draw finish circle on screen.
+	glColor3f(finish_color[0], finish_color[1], finish_color[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, finish_vbo);
+	glVertexPointer(2, GL_FLOAT, 0, NULL);
+	
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, finish_res);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	
+	// Pop translation matrix to return to original state.
+	glPopMatrix();
 }
 
 
@@ -274,36 +323,30 @@ void update_state(void) {
     int frametime = time - last_time;
     frame_count++;
 
-    // Clear the buffer
+	// If ball goes out of the window, then restart.
+	float x = ball->GetPosition().x;
+	float y = ball->GetPosition().y;
+	if (x < 0 || x > world_x || y < 0 || y > world_y) {
+		load_world(current_level);
+	}
+	
+	// If ball reaches finish, then go to next level.
+	float dist = sqrt(pow(finish_pos.x - x, 2) + pow(finish_pos.y - y, 2));
+	if (dist < finish_radius + ball_radius) {
+		load_world(++current_level);
+	}
+    
+    // Draw the level object by object.
     glColor3f(0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
     
-    // If ball reaches finish continue to next level and pause game.
-    const b2Vec2 ball_pos = ball->GetPosition();
-    float finish_dist = fabs(finish_pos.x - ball_pos.x) + fabs(finish_pos.y - ball_pos.y);
-    if (finish_dist < finish_radius+ball_radius) {
-    	load_world(++current_level);
-    	return;
-    }
-    
-    // If ball has fallen (y=0), then restart level (i.e. game over).
-    if (ball_pos.y < 0) {
-        load_world(current_level);
-        return;
-    }
-    
-    // Draw the current state of the level.
-    draw_level();
+    draw_finish();
+    draw_ball();
+    draw_objects();
 
-    // Perform tick if user has previously pressed 's', keep on waiting.
-    if (!pause_game) {
-        world->Step(1.0f / 60.0f, 6, 2);
-    }
-
-    // Show rendered frame
     glutSwapBuffers();
 
-    // Display fps in window title.
+	// Show level info and framerate.
     if (frametime >= 1000)
     {
         char window_title[128];
@@ -314,14 +357,17 @@ void update_state(void) {
         last_time = time;
         frame_count = 0;
     }
+    
+    // Tick if game is not paused.
+    if (!pause_game) world->Step(framerate, num_iters, num_iters);
 }
 
 
 /**********************************
  * User Interaction.
  **********************************/
- 
-// Resizes window.
+
+
 void resize_window(int width, int height) {
     glViewport(0, 0, width, height);
     reso_x = width;
@@ -329,7 +375,6 @@ void resize_window(int width, int height) {
 }
 
 
-// Key binding.
 void key_pressed(unsigned char key, int x, int y) {
     switch (key)
     {
@@ -338,7 +383,7 @@ void key_pressed(unsigned char key, int x, int y) {
             exit(0);
             break;
         case 's':
-            pause_game = 0;
+            pause_game = false;
             break;
         default:
             break;
@@ -346,24 +391,22 @@ void key_pressed(unsigned char key, int x, int y) {
 }
 
 
-// Click binding.
 void mouse_clicked(int button, int state, int x, int y) {
     // If user presses the left mouse button, then record mouse position.
 	if (state == 0 && button == 0) {
-		clicks[n_clicks][0] = x;
-		clicks[n_clicks][1] = y;
-		n_clicks++;
+		clicks[num_clicks][0] = x;
+		clicks[num_clicks][1] = y;
+		num_clicks++;
 		
 		// If four points have been gathered, add a new object to the level.
-		if (n_clicks == 4) {
-			add_object();
-			n_clicks = 0;
+		if (num_clicks == 4) {
+			add_new_object();
+			num_clicks = 0;
 		}
-	}
+	}	
 }
 
 
-// Move binding.
 void mouse_moved(int x, int y) {
     return;
 }
