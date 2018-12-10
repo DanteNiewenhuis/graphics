@@ -45,7 +45,7 @@ float gravity_force = 4.0;
 int ball_resolution = 32;
 float ball_friction = 0.5;
 float ball_density = 1.2;
-float ball_radius = 0.25;
+float ball_radius = 0.2;
 GLuint ball_VBO;
 
 float obj_friction = 0.5;
@@ -58,12 +58,6 @@ float finish_radius = 0.1;
 
 int n_clicks = 0;
 int clicks[4][2];
-
-/**********************************
- * Shaders.
- **********************************/
- 
-// TODO: add shaders!
 
 
 /**********************************
@@ -89,14 +83,21 @@ void init_ball(level_t level) {
 	ballFixtureDef.friction = ball_friction;
 	ball->CreateFixture(&ballFixtureDef);
 	
-	// Set up VBO for ball.
-	GLfloat vertices[] = {2.0f, 10.0f,
-	                      2.0f, 50.0f, 
-						  50.0f, 10.0f};
+	// Set up vertices and VBO for ball.
+	GLfloat *vertices = new GLfloat[ball_resolution * 2];
+	vertices[0] = 5.0f;
+	vertices[1] = 5.0f;
+	for (int i = 2; i < ball_resolution * 2; i += 2) {
+		float angle = 2 * M_PI * i / ball_resolution; 
+		vertices[i] = 5+ball_radius * cos(angle);
+		vertices[i+1] = 5+ball_radius * sin(angle);
+	}
 						  
 	glGenBuffers(1, &ball_VBO);
+	
 	glBindBuffer(GL_ARRAY_BUFFER, ball_VBO);
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, ball_resolution * 2 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -205,23 +206,13 @@ void load_world(unsigned int level_id) {
  
 // Draws the ball.
 void draw_circle(float x, float y, float rad, float r, float g, float b) {
-	/*float x2, y2;
-	
-	glColor3f(r, g, b);
-	glBegin(GL_TRIANGLE_FAN);
-	glVertex2f(x, y);
-	for (int i = 0; i <= ball_resolution; i++) {
-		float angle = 2 * M_PI * i / ball_resolution;
-		x2 = x + rad * cos(angle);
-		y2 = y + rad * sin(angle);
-		glVertex2f(x2, y2);
-	}
-	glEnd();*/
-	glColor3f(r, g, b);
-	
+	glColor3f(0.0, 1.0, 0.0);
 	glBindBuffer(GL_ARRAY_BUFFER, ball_VBO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glVertexPointer(2, GL_FLOAT, 0, NULL);
+	
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, ball_resolution);
+	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 
@@ -248,6 +239,7 @@ void draw_level(void) {
     // Otherwise, start drawing. Draw finish as a small circle.
     draw_circle(finish_pos.x, finish_pos.y, finish_radius, 0, 1, 0);
     
+    /*
     // Draw physics objects (e.g. ball) of the level.
     b2Body* body = world->GetBodyList();
     while (body) {
@@ -268,6 +260,7 @@ void draw_level(void) {
     	// Go to next object body.
     	body = body->GetNext();
     }
+    */
 }
 
 
