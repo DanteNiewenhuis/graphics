@@ -222,8 +222,9 @@ void load_world(unsigned int level_id) {
 
 int is_counterclockwise(float a[2], float b[2], float c[2]) {
 	float area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
-	return area > 0;
+	return area < 0;
 }
+
 
 void add_new_object(void) {
 	// Check whether recorded four points are wounded counter-clockwise.
@@ -231,13 +232,61 @@ void add_new_object(void) {
 	int area1 = is_counterclockwise(clicks[0], clicks[1], clicks[2]);
 	int area2 = is_counterclockwise(clicks[0], clicks[2], clicks[3]);
 	
+	// Swap if necessary.
 	if (!area1 && !area2) {
-	
+		std::swap(clicks[1][0], clicks[3][0]);
+		std::swap(clicks[1][1], clicks[3][1]);
 	} else if (!area1) {
-	
+		// TODO: other case
 	} else if (!area2) {
+		// TODO: other case
+	} 
 	
+	// Create b2Vec2 array with (local) vertex positions for Box2D.
+	float mean_x = (clicks[0][0] + clicks[1][0] + clicks[2][0] + clicks[3][0]) / 4;
+	float mean_y = (clicks[0][1] + clicks[1][1] + clicks[2][1] + clicks[3][1]) / 4;
+	b2Vec2 pts[4] = {b2Vec2(clicks[0][0] - mean_x, clicks[0][1] - mean_y),
+					 b2Vec2(clicks[1][0] - mean_x, clicks[1][1] - mean_y),
+					 b2Vec2(clicks[2][0] - mean_x, clicks[2][1] - mean_y),
+					 b2Vec2(clicks[3][0] - mean_x, clicks[3][1] - mean_y)};
+					 
+	// Set up dynamic body, shape and ficture.
+	b2BodyDef objBodyDef;
+	objBodyDef.type = b2_dynamicBody;
+	objBodyDef.position.Set(mean_x, mean_y);
+	b2Body* objBody = world->CreateBody(&objBodyDef);
+			
+	// Set up obj shape.
+	b2PolygonShape objShape;
+	objShape.Set(pts, 4);
+			
+	// Set up obj fixture.
+	b2FixtureDef objFixtureDef;
+	objFixtureDef.shape = &objShape;
+	objFixtureDef.density = obj_density;
+	objFixtureDef.friction = obj_friction;			
+	objBody->CreateFixture(&objFixtureDef);
+	
+	// Flatten 2D array of point_t structs to 1D array of floats.
+	GLfloat *obj_verts = new GLfloat[8];
+	int n = 0;
+	for (unsigned int j = 0; j < 4; j++, n++) {
+		obj_verts[n] = pts[j].x;
+		obj_verts[++n] = pts[j].y;
 	}
+		
+	// Allocate a small piece of memory for object on GPU (VBO).
+	GLuint obj_vbo;
+	glGenBuffers(1, &obj_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, obj_vbo);
+	glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), obj_verts, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+		
+	// Store new vbo-identifier, number of verts and bodies for later.
+	obj_vbos.push_back(obj_vbo);
+	obj_num_verts.push_back(4);
+	obj_bodies.push_back(objBody);
+	
 }
 
 
@@ -262,6 +311,7 @@ void draw_ball(void) {
 	// Pop translation matrix to return to original state.
 	glPopMatrix();
 }
+
 
 void draw_objects(void) {  
     for (unsigned int i = 0; i < obj_bodies.size(); i++) {
@@ -294,6 +344,7 @@ void draw_objects(void) {
     }
 }
 
+
 void draw_finish(void) {
 	// Push translation matrix onto matrix stack.
 	glPushMatrix();
@@ -316,6 +367,7 @@ void draw_finish(void) {
 /**********************************
  * Game Logic
  **********************************/
+ 
  
 // Called to update the game state.
 void update_state(void) {
@@ -394,8 +446,8 @@ void key_pressed(unsigned char key, int x, int y) {
 void mouse_clicked(int button, int state, int x, int y) {
     // If user presses the left mouse button, then record mouse position.
 	if (state == 0 && button == 0) {
-		clicks[num_clicks][0] = x;
-		clicks[num_clicks][1] = y;
+		clicks[num_clicks][0] = world_x * x / reso_x;
+		clicks[num_clicks][1] = world_y - (world_y * y / reso_y);
 		num_clicks++;
 		
 		// If four points have been gathered, add a new object to the level.
@@ -403,7 +455,7 @@ void mouse_clicked(int button, int state, int x, int y) {
 			add_new_object();
 			num_clicks = 0;
 		}
-	}	
+	}
 }
 
 
@@ -415,6 +467,7 @@ void mouse_moved(int x, int y) {
 /**********************************
  * Main Loop
  **********************************/
+ 
  
 int main(int argc, char **argv) {
     // Create an OpenGL context and a GLUT window.
