@@ -46,7 +46,7 @@ int ball_resolution = 32;
 float ball_friction = 0.5;
 float ball_density = 1.2;
 float ball_radius = 0.25;
-GLuint ball_VAO;
+GLuint ball_VBO;
 
 float obj_friction = 0.5;
 float obj_density = 1.2;
@@ -90,22 +90,14 @@ void init_ball(level_t level) {
 	ball->CreateFixture(&ballFixtureDef);
 	
 	// Set up VBO for ball.
-	GLfloat vertices[] = {-1.0f, -1.0f, 0.0f, 
-						   1.0f, -1.0f, 0.0f, 
-						   0.0f, 0.5f, 0.0f};
-	GLuint ball_VBO[1];
-	glGenBuffers(1, ball_VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, ball_VBO[0]);
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), vertices, GL_DYNAMIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
-	// Set up ball VAO.
-	glGenVertexArrays(1, &ball_VAO);
-	glBindVertexArray(ball_VAO);
-	glEnableVertexAttribArray(0);
-	//glBindBuffer(GL_ARRAY_BUFFER, ball_VBO[0]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-	glBindVertexArray(0);
+	GLfloat vertices[] = {2.0f, 10.0f,
+	                      2.0f, 50.0f, 
+						  50.0f, 10.0f};
+						  
+	glGenBuffers(1, &ball_VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, ball_VBO);
+	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
@@ -225,9 +217,11 @@ void draw_circle(float x, float y, float rad, float r, float g, float b) {
 		glVertex2f(x2, y2);
 	}
 	glEnd();*/
-	glBindVertexArray(ball_VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glBindVertexArray(0);
+	glColor3f(r, g, b);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, ball_VBO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
