@@ -1,6 +1,13 @@
 #pragma once
 
 /*
+ * Represents a tuple of 3 floats representing a color.
+ */
+typedef struct {
+    float x, y, z;
+} color3f;
+
+/*
  * Represents a tuple of 2 floats.
  */
 typedef struct {

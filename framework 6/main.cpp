@@ -23,58 +23,63 @@
 
 #include "levels.h"
 
-// Define properties of game to make it run smoothly.
+/**********************************
+ * Setup
+ **********************************/
+
+// Game properties (resolution, world size, framerate, colors, etc.).
 unsigned int reso_x = 800, reso_y = 600;
 const float world_x = 8.f, world_y = 6.f;
 const float framerate = 1.0f / 60.0f;
+
+// Physics parameters.
 const int velocity_iters = 8;
 const int position_iters = 3;
-
-int last_time;
-int frame_count;
-
-
-/**********************************
- * Game State Variables
- **********************************/
-
-// Define parameters of Box2D.
-b2World* world;
-b2Body* ball;
 float gravity_force = 2.0;
 
-// Define current state of the game (paused?, level?, clicks?, etc.)
-bool pause_game = true;
+// Colors.
+float colors[4][3] = {{1.0, 0.0, 0.0},
+		    		  {0.0, 1.0, 0.0},
+		    		  {0.1, 1.0, 0.1},
+		    		  {0.0, 0.0, 1.0}};
 
+// References to important Box2D objects and OpenGL VBO identifiers.
+b2World* world;
+b2Body* ball;
+
+GLuint ball_vbo;
+GLuint finish_vbo;
+point_t finish_pos;
+
+std::vector<color3f> obj_colors;
+std::vector<GLuint> obj_vbos;
+std::vector<int> obj_num_verts;
+std::vector<b2Body*> obj_bodies;
+
+// Game state (paused?, level?, clicks?, etc.)
+bool pause_game = true;
 int current_level = 0;
 unsigned int num_levels;
 level_t *levels;
 
 int num_clicks = 0;
 float clicks[4][2];
+int last_time;
+int frame_count;
 
-// Define characteristics of the ball.
+// Characteristics of the ball.
 float ball_radius = 0.3;
 float ball_density = 1.0;
 float ball_friction = 0.2;
 int ball_res = 64;
-float ball_color[3] = {1.0, 0.0, 0.0};
-GLuint ball_vbo;
 
-// Define characteristics of the objects of the level.
+// Characteristics of the static and dynamic objects of the level.
 float obj_density = 1.0;
 float obj_friction = 0.2;
-float obj_color[3] = {0.0, 1.0, 0.0};
-std::vector<GLuint> obj_vbos;
-std::vector<int> obj_num_verts;
-std::vector<b2Body*> obj_bodies;
 
-// Define characteristics of finish line (modelled as physics-less circle).
-float finish_color[3] = {0.0, 0.0, 1.0};
+// Characteristics of finish line (physics-less circle).
 float finish_radius = 0.15;
 int finish_res = 32;
-GLuint finish_vbo;
-point_t finish_pos;
 
 
 /**********************************
@@ -122,6 +127,7 @@ void init_objects(level_t level) {
 		obj_vbos.clear();
 		obj_num_verts.clear();
 		obj_bodies.clear();
+		obj_colors.clear();
 	}
 		
 	// Loop through objects in level.
@@ -175,6 +181,13 @@ void init_objects(level_t level) {
 		obj_vbos.push_back(obj_vbo);
 		obj_num_verts.push_back(poly.num_verts);
 		obj_bodies.push_back(objBody);
+		
+		// Assign second color from color palette to object.
+		color3f obj_color;
+		obj_color.x = colors[1][0];
+		obj_color.y = colors[1][1];
+		obj_color.z = colors[1][2];
+		obj_colors.push_back(obj_color);
 	}
 } 
 
@@ -287,6 +300,12 @@ void add_new_object(void) {
 	obj_num_verts.push_back(4);
 	obj_bodies.push_back(objBody);
 	
+	// Assign third color from color palette to new object.
+	color3f obj_color;
+	obj_color.x = colors[2][0];
+	obj_color.y = colors[2][1];
+	obj_color.z = colors[2][2];
+	obj_colors.push_back(obj_color);
 }
 
 
@@ -300,7 +319,7 @@ void draw_ball(void) {
     glTranslatef(ball->GetPosition().x, ball->GetPosition().y, 0);	
         	
 	// Draw ball on screen.
-	glColor3f(ball_color[0], ball_color[1], ball_color[2]);
+	glColor3f(colors[0][0], colors[0][1], colors[0][2]);
 	glBindBuffer(GL_ARRAY_BUFFER, ball_vbo);
 	glVertexPointer(2, GL_FLOAT, 0, NULL);
 	
@@ -316,9 +335,6 @@ void draw_ball(void) {
 
 
 void draw_objects(void) {  
-
-	glColor3f(obj_color[0], obj_color[1], obj_color[2]);
-
     for (unsigned int i = 0; i < obj_bodies.size(); i++) {
     	// Get body shape type.
     	b2Body* body = obj_bodies[i];
@@ -329,11 +345,12 @@ void draw_objects(void) {
     		// Push translation and rotation matrix onto matrix stack.
 			glPushMatrix();
 			glTranslatef(body->GetPosition().x, body->GetPosition().y, 0);
-			glRotatef(body->GetAngle(), 0, 0, 1);
+			glRotatef(360.0 * body->GetAngle() / (2 * M_PI), 0, 0, 1);
 					
 			// Draw ball on screen.
 			glBindBuffer(GL_ARRAY_BUFFER, obj_vbos[i]);
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
+			glColor3f(obj_colors[i].x, obj_colors[i].y, obj_colors[i].z);
 			
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glDrawArrays(GL_TRIANGLE_FAN, 0, obj_num_verts[i]);
@@ -357,7 +374,7 @@ void draw_finish(void) {
     glTranslatef(finish_pos.x, finish_pos.y, 0);	
         	
 	// Draw finish circle on screen.
-	glColor3f(finish_color[0], finish_color[1], finish_color[2]);
+	glColor3f(colors[3][0], colors[3][1], colors[3][2]);
 	glBindBuffer(GL_ARRAY_BUFFER, finish_vbo);
 	glVertexPointer(2, GL_FLOAT, 0, NULL);
 	
