@@ -110,7 +110,7 @@ void init_ball(level_t level) {
 	glGenBuffers(1, &ball_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, ball_vbo);
 	glBufferData(GL_ARRAY_BUFFER, ball_res * 2 * sizeof(GLfloat), 
-				 ball_verts, GL_DYNAMIC_DRAW);
+				 ball_verts, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -168,7 +168,7 @@ void init_objects(level_t level) {
 		glGenBuffers(1, &obj_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, obj_vbo);
 		glBufferData(GL_ARRAY_BUFFER, poly.num_verts * 2 * sizeof(GLfloat), 
-					 obj_verts, GL_DYNAMIC_DRAW);
+					 obj_verts, GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		
 		// Store new vbo-identifier, number of verts and bodies for later.
@@ -197,7 +197,7 @@ void init_finish(level_t level) {
 	glGenBuffers(1, &finish_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, finish_vbo);
 	glBufferData(GL_ARRAY_BUFFER, finish_res * 2 * sizeof(GLfloat), 
-				 finish_verts, GL_DYNAMIC_DRAW);
+				 finish_verts, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -279,7 +279,7 @@ void add_new_object(void) {
 	GLuint obj_vbo;
 	glGenBuffers(1, &obj_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, obj_vbo);
-	glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), obj_verts, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), obj_verts, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 		
 	// Store new vbo-identifier, number of verts and bodies for later.
@@ -308,6 +308,8 @@ void draw_ball(void) {
 	glDrawArrays(GL_TRIANGLE_FAN, 0, ball_res);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
 	// Pop translation matrix to return to original state.
 	glPopMatrix();
 }
@@ -335,6 +337,8 @@ void draw_objects(void) {
 			glDrawArrays(GL_TRIANGLE_FAN, 0, obj_num_verts[i]);
 			glDisableClientState(GL_VERTEX_ARRAY);
 			
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			
 			// Pop translation matrix to return to original state.
 			glPopMatrix();
     	}
@@ -358,6 +362,8 @@ void draw_finish(void) {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, finish_res);
 	glDisableClientState(GL_VERTEX_ARRAY);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
 	// Pop translation matrix to return to original state.
 	glPopMatrix();
@@ -388,7 +394,7 @@ void update_state(void) {
 		load_world(++current_level);
 	}
     
-    // Draw the level object by object.
+    // Draw the level finish, ball and objects in that order.
     glColor3f(0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
     
