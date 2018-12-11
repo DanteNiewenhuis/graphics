@@ -23,10 +23,12 @@
 
 #include "levels.h"
 
+// Define properties of game to make it run smoothly.
 unsigned int reso_x = 800, reso_y = 600;
 const float world_x = 8.f, world_y = 6.f;
 const float framerate = 1.0f / 60.0f;
-const int num_iters = 3;
+const int velocity_iters = 8;
+const int position_iters = 3;
 
 int last_time;
 int frame_count;
@@ -36,37 +38,38 @@ int frame_count;
  * Game State Variables
  **********************************/
 
-// Define 'entities' for Box2D.
+// Define parameters of Box2D.
 b2World* world;
 b2Body* ball;
-float gravity_force = -2.0;
+float gravity_force = 2.0;
 
 // Define current state of the game (paused?, level?, clicks?, etc.)
-int current_level = 0;
 bool pause_game = true;
+
+int current_level = 0;
 unsigned int num_levels;
 level_t *levels;
 
 int num_clicks = 0;
 float clicks[4][2];
 
-// Define properties of the ball.
+// Define characteristics of the ball.
 float ball_radius = 0.3;
-float ball_density = 0.2;
+float ball_density = 1.0;
 float ball_friction = 0.2;
 int ball_res = 64;
 float ball_color[3] = {1.0, 0.0, 0.0};
 GLuint ball_vbo;
 
-// Define properties of the static and dynamic objects of the level.
-float obj_density = 0.2;
+// Define characteristics of the objects of the level.
+float obj_density = 1.0;
 float obj_friction = 0.2;
 float obj_color[3] = {0.0, 1.0, 0.0};
 std::vector<GLuint> obj_vbos;
 std::vector<int> obj_num_verts;
 std::vector<b2Body*> obj_bodies;
 
-// Define properties of finish line (modelled as physics-less circle).
+// Define characteristics of finish line (modelled as physics-less circle).
 float finish_color[3] = {0.0, 0.0, 1.0};
 float finish_radius = 0.15;
 int finish_res = 32;
@@ -79,24 +82,22 @@ point_t finish_pos;
  **********************************/
  
 void init_ball(level_t level) {
-	// Set up ball body.
+	// Set up ball as Box2D object and keep a reference to the ball.
 	b2BodyDef ballBodyDef;
 	ballBodyDef.type = b2_dynamicBody;
 	ballBodyDef.position.Set(level.start.x, level.start.y);
 	ball = world->CreateBody(&ballBodyDef);
 	
-	// Set up ball shape.
 	b2CircleShape ballShape;
 	ballShape.m_radius = ball_radius;
 	
-	// Set up ball fixture.
 	b2FixtureDef ballFixtureDef;
 	ballFixtureDef.shape = &ballShape;
 	ballFixtureDef.density = ball_density;
 	ballFixtureDef.friction = ball_friction;
 	ball->CreateFixture(&ballFixtureDef);
 	
-	// Initialize array with 2D vertices of ball.
+	// Initialize 1D array containing vertices of ball as triangle fan.
 	GLfloat *ball_verts = new GLfloat[2 * ball_res];
 	ball_verts[0] = 0.0f;
 	ball_verts[1] = 0.0f;
@@ -116,33 +117,33 @@ void init_ball(level_t level) {
 
 
 void init_objects(level_t level) {
-	// Clear previous level (if it exists).
-	obj_vbos.clear();
-	obj_num_verts.clear();
-	obj_bodies.clear();
+	// Clear objects of previous level (if it exists).
+	if (obj_vbos.size()) {
+		obj_vbos.clear();
+		obj_num_verts.clear();
+		obj_bodies.clear();
+	}
 		
 	// Loop through objects in level.
 	for (unsigned int i = 0; i < level.num_polygons; i++) {
 		poly_t poly = level.polygons[i];
 		point_t pos = poly.position;
 		
-		// Convert point_t array to b2Vec2 array.
+		// Convert point_t array to b2Vec2 array (preferred by Box2D).
 		b2Vec2 *pts = new b2Vec2[poly.num_verts];
 		for (unsigned int j = 0; j < poly.num_verts; j++) {
 			pts[j] = b2Vec2(poly.verts[j].x, poly.verts[j].y);
 		}
 		
-		// Create dynamic or static body.
+		// Create dynamic or static object depending on type provided by level.
 		b2BodyDef objBodyDef;
 		if (poly.is_dynamic) objBodyDef.type = b2_dynamicBody;
 		objBodyDef.position.Set(pos.x, pos.y);
 		b2Body* objBody = world->CreateBody(&objBodyDef);
 			
-		// Set up obj shape.
 		b2PolygonShape objShape;
 		objShape.Set(pts, poly.num_verts);
 			
-		// Set up obj fixture.
 		if (poly.is_dynamic) {
 			b2FixtureDef objFixtureDef;
 			objFixtureDef.shape = &objShape;
@@ -154,14 +155,13 @@ void init_objects(level_t level) {
 			objBody->CreateFixture(&objShape, 0.0f);
 		}
 		
-		// Flatten 2D array of point_t structs to 1D array of floats.
+		// Obtain a 1D array of object vertices (each pair being a vertex).
 		GLfloat *obj_verts = new GLfloat[2 * poly.num_verts];
 		int n = 0;
 		for (unsigned int j = 0; j < poly.num_verts; j++, n++) {
 			obj_verts[n] = poly.verts[j].x;
 			obj_verts[++n] = poly.verts[j].y;
 		}
-		
 		
 		// Allocate a small piece of memory for object on GPU (VBO).
 		GLuint obj_vbo;
@@ -171,7 +171,7 @@ void init_objects(level_t level) {
 					 obj_verts, GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		
-		// Store new vbo-identifier, number of verts and bodies for later.
+		// Store new vbo-identifier, number of verts and Box2D bodies for later.
 		obj_vbos.push_back(obj_vbo);
 		obj_num_verts.push_back(poly.num_verts);
 		obj_bodies.push_back(objBody);
@@ -183,7 +183,7 @@ void init_finish(level_t level) {
 	// Set finish position.
 	finish_pos = level.end;
 	
-	// Initialize array with 2D vertices of ball.
+	// Initialize 1D array with vertices of fisish (represented by a circle).
 	GLfloat *finish_verts = new GLfloat[2 * finish_res];
 	finish_verts[0] = 0.0f;
 	finish_verts[1] = 0.0f;
@@ -207,19 +207,21 @@ void load_world(unsigned int level_id) {
 	level_t level = levels[level_id];
 	
 	// Initialize the world.
-	b2Vec2 gravity(0.0, gravity_force);
+	b2Vec2 gravity(0.0, -gravity_force);
 	world = new b2World(gravity);
 	
-	// Initialize each object component of the level.
+	// Initialize each component of the level.
 	init_ball(level);
 	init_objects(level);
 	init_finish(level);
 	
-	// Keep the game paused while user sets up his level.
+	// Keep the game paused while user sets up other objects in the level.
 	pause_game = true;
 }
 
 
+// Checks whether the points spanning a triangle are provided in a 
+// counterclockwise manner.
 int is_counterclockwise(float a[2], float b[2], float c[2]) {
 	float area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
 	return area < 0;
@@ -227,12 +229,12 @@ int is_counterclockwise(float a[2], float b[2], float c[2]) {
 
 
 void add_new_object(void) {
-	// Check whether recorded four points are wounded counter-clockwise.
+	// Check whether recorded four points are wounded counter-clockwise
 	// in terms of their triangle fan specification ((0, 1, 2) and (0, 2, 3)).
 	int area1 = is_counterclockwise(clicks[0], clicks[1], clicks[2]);
 	int area2 = is_counterclockwise(clicks[0], clicks[2], clicks[3]);
 	
-	// Swap if necessary.
+	// Swap points to get correct order.
 	if (!area1 && !area2) {
 		std::swap(clicks[1][0], clicks[3][0]);
 		std::swap(clicks[1][1], clicks[3][1]);
@@ -242,7 +244,7 @@ void add_new_object(void) {
 		// TODO: other case
 	} 
 	
-	// Create b2Vec2 array with (local) vertex positions for Box2D.
+	// Create b2Vec2 array with local vertex positions for Box2D.
 	float mean_x = (clicks[0][0] + clicks[1][0] + clicks[2][0] + clicks[3][0]) / 4;
 	float mean_y = (clicks[0][1] + clicks[1][1] + clicks[2][1] + clicks[3][1]) / 4;
 	b2Vec2 pts[4] = {b2Vec2(clicks[0][0] - mean_x, clicks[0][1] - mean_y),
@@ -250,17 +252,15 @@ void add_new_object(void) {
 					 b2Vec2(clicks[2][0] - mean_x, clicks[2][1] - mean_y),
 					 b2Vec2(clicks[3][0] - mean_x, clicks[3][1] - mean_y)};
 					 
-	// Set up dynamic body, shape and ficture.
+	// Set up dynamic body, shape and fixture.
 	b2BodyDef objBodyDef;
 	objBodyDef.type = b2_dynamicBody;
 	objBodyDef.position.Set(mean_x, mean_y);
 	b2Body* objBody = world->CreateBody(&objBodyDef);
 			
-	// Set up obj shape.
 	b2PolygonShape objShape;
 	objShape.Set(pts, 4);
 			
-	// Set up obj fixture.
 	b2FixtureDef objFixtureDef;
 	objFixtureDef.shape = &objShape;
 	objFixtureDef.density = obj_density;
@@ -282,7 +282,7 @@ void add_new_object(void) {
 	glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), obj_verts, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 		
-	// Store new vbo-identifier, number of verts and bodies for later.
+	// Add vbo-identifier, number of verts and body to level.
 	obj_vbos.push_back(obj_vbo);
 	obj_num_verts.push_back(4);
 	obj_bodies.push_back(objBody);
@@ -316,6 +316,9 @@ void draw_ball(void) {
 
 
 void draw_objects(void) {  
+
+	glColor3f(obj_color[0], obj_color[1], obj_color[2]);
+
     for (unsigned int i = 0; i < obj_bodies.size(); i++) {
     	// Get body shape type.
     	b2Body* body = obj_bodies[i];
@@ -329,7 +332,6 @@ void draw_objects(void) {
 			glRotatef(body->GetAngle(), 0, 0, 1);
 					
 			// Draw ball on screen.
-			glColor3f(obj_color[0], obj_color[1], obj_color[2]);
 			glBindBuffer(GL_ARRAY_BUFFER, obj_vbos[i]);
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
 			
@@ -417,7 +419,7 @@ void update_state(void) {
     }
     
     // Tick if game is not paused.
-    if (!pause_game) world->Step(framerate, num_iters, num_iters);
+    if (!pause_game) world->Step(framerate, velocity_iters, position_iters);
 }
 
 
@@ -456,7 +458,7 @@ void mouse_clicked(int button, int state, int x, int y) {
 		clicks[num_clicks][1] = world_y - (world_y * y / reso_y);
 		num_clicks++;
 		
-		// If four points have been gathered, add a new object to the level.
+		// If four points have been gathered, add a object to the level.
 		if (num_clicks == 4) {
 			add_new_object();
 			num_clicks = 0;
