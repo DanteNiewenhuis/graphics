@@ -57,7 +57,7 @@ std::vector<b2Body*> obj_bodies;
 
 // Game state (paused?, level?, clicks?, etc.)
 bool pause_game = true;
-int current_level = 3;
+unsigned int current_level = 0;
 unsigned int num_levels;
 level_t *levels;
 point_t finish_pos;
@@ -193,21 +193,26 @@ void init_objects(level_t level) {
 	// Join objects together using joints.
 	for (unsigned int i = 0; i < level.num_joints; i++) {
 	    joint_t joint = level.joints[i];
-	    unsigned id1 = joint.objectA;
-	    unsigned id2 = joint.objectB;
+	    b2Body* body1 = obj_bodies[joint.objectA];
+	    b2Body* body2 = obj_bodies[joint.objectB];
 	    
 	    // Add revolute joints.
 	    if (joint.joint_type == JOINT_REVOLUTE) {
             b2RevoluteJointDef jointDef;
-            jointDef.Initialize(obj_bodies[id1], obj_bodies[id2], 
-                                b2Vec2(joint.anchor.x, joint.anchor.y));
+            jointDef.Initialize(body1, body2, b2Vec2(joint.anchor.x, joint.anchor.y));
             world->CreateJoint(&jointDef);
 
         // Add pulley joints.
 	    } else {
-	        // TODO: do stuff
+	        b2Vec2 ground1 = b2Vec2(joint.pulley.ground1.x, joint.pulley.ground1.y);
+	        b2Vec2 ground2 = b2Vec2(joint.pulley.ground2.x, joint.pulley.ground2.y);
+	        b2Vec2 anchor1 = b2Vec2(joint.anchor.x, joint.anchor.y);
+	        b2Vec2 anchor2 = b2Vec2(joint.pulley.anchor2.x, joint.pulley.anchor2.y);
+	        float ratio = joint.pulley.ratio;
+	        
 	        b2PulleyJointDef jointDef;
-	        jointDef.Initialize(myBody1,  myBody2,  groundAnchor1,  groundAnchor2,  anchor1, anchor2, ratio);
+	        jointDef.Initialize(body1, body2, ground1, ground2, anchor1, anchor2, ratio);
+	        world->CreateJoint(&jointDef);
 	    }
 	} 
 } 
@@ -428,10 +433,18 @@ void update_state(void) {
 		load_world(current_level);
 	}
 	
-	// If ball reaches finish, then go to next level.
+	// If ball reaches finish, then go to next level or stop the game (end).
 	float dist = sqrt(pow(finish_pos.x - x, 2) + pow(finish_pos.y - y, 2));
 	if (dist < finish_radius + ball_radius) {
-		load_world(++current_level);
+	
+		// If this was the final level, then quit or something.
+		if (current_level == num_levels-1) {
+			exit(0);
+			
+		// Otherwise, go to level + 1.
+		} else {
+			load_world(++current_level);
+		}
 	}
     
     // Draw the level finish, ball and objects in that order.
