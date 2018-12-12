@@ -122,7 +122,7 @@ void init_ball(level_t level) {
 
 
 void init_objects(level_t level) {
-	// Clear objects of previous level (if it exists).
+	// Clear objects from vectors of previous level (if they exist).
 	if (obj_vbos.size()) {
 		obj_vbos.clear();
 		obj_num_verts.clear();
@@ -189,6 +189,9 @@ void init_objects(level_t level) {
 		obj_color.z = colors[1][2];
 		obj_colors.push_back(obj_color);
 	}
+	
+	// Join objects together using joints.
+	
 } 
 
 
@@ -461,6 +464,9 @@ void key_pressed(unsigned char key, int x, int y) {
             break;
         case 's':
             pause_game = false;
+            break;
+        case 'r':
+            load_world(current_level);
             break;
         default:
             break;
