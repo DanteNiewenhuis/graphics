@@ -49,7 +49,6 @@ b2Body* ball;
 
 GLuint ball_vbo;
 GLuint finish_vbo;
-point_t finish_pos;
 
 std::vector<color3f> obj_colors;
 std::vector<GLuint> obj_vbos;
@@ -58,9 +57,10 @@ std::vector<b2Body*> obj_bodies;
 
 // Game state (paused?, level?, clicks?, etc.)
 bool pause_game = true;
-int current_level = 0;
+int current_level = 3;
 unsigned int num_levels;
 level_t *levels;
+point_t finish_pos;
 
 int num_clicks = 0;
 float clicks[4][2];
@@ -73,7 +73,7 @@ float ball_density = 1.0;
 float ball_friction = 0.2;
 int ball_res = 64;
 
-// Characteristics of the static and dynamic objects of the level.
+// Characteristics of dynamic objects of the level.
 float obj_density = 1.0;
 float obj_friction = 0.2;
 
@@ -191,7 +191,25 @@ void init_objects(level_t level) {
 	}
 	
 	// Join objects together using joints.
-	
+	for (unsigned int i = 0; i < level.num_joints; i++) {
+	    joint_t joint = level.joints[i];
+	    unsigned id1 = joint.objectA;
+	    unsigned id2 = joint.objectB;
+	    
+	    // Add revolute joints.
+	    if (joint.joint_type == JOINT_REVOLUTE) {
+            b2RevoluteJointDef jointDef;
+            jointDef.Initialize(obj_bodies[id1], obj_bodies[id2], 
+                                b2Vec2(joint.anchor.x, joint.anchor.y));
+            world->CreateJoint(&jointDef);
+
+        // Add pulley joints.
+	    } else {
+	        // TODO: do stuff
+	        b2PulleyJointDef jointDef;
+	        jointDef.Initialize(myBody1,  myBody2,  groundAnchor1,  groundAnchor2,  anchor1, anchor2, ratio);
+	    }
+	} 
 } 
 
 
