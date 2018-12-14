@@ -280,14 +280,6 @@ void load_world(unsigned int level_id) {
 
 }
 
-
-// Checks whether the points spanning a triangle are provided in a 
-// counterclockwise manner.
-int is_counterclockwise(float a[2], float b[2], float c[2]) {
-	float area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
-	return area < 0;
-}
-
 std::vector<int> sort_indexes(const std::vector<float> &v) {
 
   // initialize original index locations
