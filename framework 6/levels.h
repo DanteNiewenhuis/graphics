@@ -85,3 +85,4 @@ typedef struct {
 
 int load_levels(level_t **levels);
 level_t load_level(const char *level_name);
+std::vector<int> sort_indexes(const std::vector<float> &v)
