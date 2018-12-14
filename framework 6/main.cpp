@@ -69,8 +69,10 @@ int frame_count;
 
 // variables for the scoring system
 int amount_of_quadrilaterals = 0;
-float amount_multiplier = 0.2;
+float amount_multipliers[6] = {1, 0.8, 0.6, 0.4, 0.3, 0.2};
+float amount_multiplier;
 int score = 0;
+int level_scores[6] = {1000, 1500, 2000, 2500, 3000, 3500};
 int level_score;
 int death_penalty = 100;
 
@@ -272,7 +274,9 @@ void load_world(unsigned int level_id) {
 	pause_game = true;
 
 	amount_of_quadrilaterals = 0;
-	level_score = 1000;
+	amount_multiplier = amount_multipliers[level_id];
+	level_score = level_scores[level_id];
+
 }
 
 
@@ -380,11 +384,14 @@ void add_new_object(void) {
 	float dot = vec_1[0]*vec_2[0] + vec_1[1]*vec_2[1];
 	angle = acos(dot/(len_1*len_2));
 
-	int size = len_1 * len_2/2 * sin(angle) * 100;
+	float size = ((len_1 * len_2)/2) * sin(angle);
 
 	// remove points from the score based on the size of the quadrilateral 
 	// and the amount of quadrilaterals already placed
 	level_score -= (size * 100) * (1 + amount_multiplier * amount_of_quadrilaterals);
+	
+	// make sure the level score can not go below 0
+	if (level_score < 0) level_score = 0;
 	amount_of_quadrilaterals++;
 }
 
@@ -503,7 +510,7 @@ void update_state(void) {
 		}
 	}
     
-	// animate background color
+	// EXTRA FEATURE: animate background color
 	float k = color_counter / color_frames;
 	glClearColor(next_color[0] * k + base_color[0] * (1-k),
 				 next_color[1] * k + base_color[1] * (1-k),
@@ -542,8 +549,9 @@ void update_state(void) {
     {
         char window_title[128];
         snprintf(window_title, 128,
-                "Box2D: %f fps, level %d/%d, score: %d", 
-				frame_count / (frametime / 1000.f), current_level+1, num_levels, score);
+                "Box2D: %f fps, level %d/%d, score: %d, levelscore: %d", 
+				frame_count / (frametime / 1000.f), current_level+1, num_levels, 
+				score, level_score);
         glutSetWindowTitle(window_title);
         last_time = time;
         frame_count = 0;
