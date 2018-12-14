@@ -66,6 +66,11 @@ int num_clicks = 0;
 float clicks[4][2];
 int last_time;
 int frame_count;
+int amount_of_squares = 0;
+float amount_multiplier = 0.2;
+int score = 0;
+int level_score;
+int death_penalty = 100;
 
 // Characteristics of the ball.
 float ball_radius = 0.3;
@@ -256,6 +261,9 @@ void load_world(unsigned int level_id) {
 	
 	// Keep the game paused while user sets up other objects in the level.
 	pause_game = true;
+
+	amount_of_squares = 0;
+	level_score = 1000;
 }
 
 
@@ -349,6 +357,23 @@ void add_new_object(void) {
 	obj_color.y = colors[2][1];
 	obj_color.z = colors[2][2];
 	obj_colors.push_back(obj_color);
+
+	float vec_1[2];
+	float vec_2[2];
+	vec_1[0] = clicks[sorted_angles[2]][0] - clicks[sorted_angles[0]][0];
+	vec_1[1] = clicks[sorted_angles[2]][1] - clicks[sorted_angles[0]][1];
+	vec_2[0] = clicks[sorted_angles[3]][0] - clicks[sorted_angles[1]][0];
+	vec_2[1] = clicks[sorted_angles[3]][1] - clicks[sorted_angles[1]][1];
+
+	float len_1 = sqrt(vec_1[0]*vec_1[0] + vec_1[1] * vec_1[1]);
+	float len_2 = sqrt(vec_2[0]*vec_2[0] + vec_2[1] * vec_2[1]);
+	float dot = vec_1[0]*vec_2[0] + vec_1[1]*vec_2[1];
+	angle = acos(dot/(len_1*len_2));
+
+	int size = (len_1 * len_2/2 * sin(angle) * 100) * (1 + amount_multiplier * amount_of_squares);
+	amount_of_squares++;
+
+	level_score -= size;
 }
 
 
@@ -447,6 +472,7 @@ void update_state(void) {
 	float x = ball->GetPosition().x;
 	float y = ball->GetPosition().y;
 	if (x < 0 || x > world_x || y < 0 || y > world_y) {
+		score -= death_penalty;
 		load_world(current_level);
 	}
 	
@@ -460,6 +486,7 @@ void update_state(void) {
 			
 		// Otherwise, go to level + 1.
 		} else {
+			score += level_score;
 			load_world(++current_level);
 		}
 	}
@@ -479,8 +506,8 @@ void update_state(void) {
     {
         char window_title[128];
         snprintf(window_title, 128,
-                "Box2D: %f fps, level %d/%d",
-                frame_count / (frametime / 1000.f), current_level+1, num_levels);
+                "Box2D: %f fps, level %d/%d, score: %d",
+                frame_count / (frametime / 1000.f), current_level+1, num_levels, score);
         glutSetWindowTitle(window_title);
         last_time = time;
         frame_count = 0;
