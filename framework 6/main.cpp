@@ -72,6 +72,11 @@ int score = 0;
 int level_score;
 int death_penalty = 100;
 
+float color_counter = 1;
+float color_frames = 100;
+float color_1[3] = {0.5, 0, 0};
+float color_2[3] = {0, 0.5, 0};
+
 // Characteristics of the ball.
 float ball_radius = 0.3;
 float ball_density = 1.0;
@@ -479,22 +484,39 @@ void update_state(void) {
 	// If ball reaches finish, then go to next level or stop the game (end).
 	float dist = sqrt(pow(finish_pos.x - x, 2) + pow(finish_pos.y - y, 2));
 	if (dist < finish_radius + ball_radius) {
-	
+		score += level_score;
+
 		// If this was the final level, then quit or something.
 		if (current_level == num_levels-1) {
 			exit(0);
 			
 		// Otherwise, go to level + 1.
 		} else {
-			score += level_score;
 			load_world(++current_level);
 		}
 	}
     
-    // Draw the level finish, ball and objects in that order.
-    glColor3f(0, 0, 0);
+	// animate background color
+	float k = color_counter / color_frames;
+	glClearColor(color_2[0] * k + color_1[0] * (1-k),
+				 color_2[1] * k + color_1[1] * (1-k),
+				 color_2[2] * k + color_1[2] * (1-k),
+				 1);
+	color_counter++;
+	if (color_counter == color_frames) {
+		color_1[0] = color_2[0];
+		color_1[1] = color_2[1];
+		color_1[2] = color_2[2];
+
+		color_2[0] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
+		color_2[1] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
+		color_2[2] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
+		color_counter = 0;
+	}
+	
     glClear(GL_COLOR_BUFFER_BIT);
     
+	// Draw the level finish, ball and objects in that order.
     draw_finish();
     draw_ball();
     draw_objects();
@@ -506,8 +528,8 @@ void update_state(void) {
     {
         char window_title[128];
         snprintf(window_title, 128,
-                "Box2D: %f fps, level %d/%d, score: %d",
-                frame_count / (frametime / 1000.f), current_level+1, num_levels, score);
+                "Box2D: %f fps, level %d/%d, score: %d", 
+				frame_count / (frametime / 1000.f), current_level+1, num_levels, score);
         glutSetWindowTitle(window_title);
         last_time = time;
         frame_count = 0;
