@@ -57,7 +57,7 @@ std::vector<b2Body*> obj_bodies;
 
 // Game state (paused?, level?, clicks?, etc.)
 bool pause_game = true;
-unsigned int current_level = 0;
+unsigned int current_level = 4;
 unsigned int num_levels;
 level_t *levels;
 point_t finish_pos;
@@ -75,6 +75,7 @@ int score = 0;
 int level_scores[6] = {1000, 1500, 2000, 2500, 3000, 3500};
 int level_score;
 int death_penalty = 100;
+bool finished = false;
 
 float color_counter = 1;
 float color_frames = 100;
@@ -483,6 +484,7 @@ void draw_finish(void) {
  
 // Called to update the game state.
 void update_state(void) {
+
     int time = glutGet(GLUT_ELAPSED_TIME);
     int frametime = time - last_time;
     frame_count++;
@@ -491,18 +493,24 @@ void update_state(void) {
 	float x = ball->GetPosition().x;
 	float y = ball->GetPosition().y;
 	if (x < 0 || x > world_x || y < 0 || y > world_y) {
-		score -= death_penalty;
+		level_score -= death_penalty;
+		if (level_score < 0) level_score = 0;
 		load_world(current_level);
 	}
 	
 	// If ball reaches finish, then go to next level or stop the game (end).
 	float dist = sqrt(pow(finish_pos.x - x, 2) + pow(finish_pos.y - y, 2));
 	if (dist < finish_radius + ball_radius) {
-		score += level_score;
+		if (!finished) score += level_score;
 
 		// If this was the final level, then quit or something.
 		if (current_level == num_levels-1) {
-			exit(0);
+			pause_game = true;
+			char window_title[128];
+        	snprintf(window_title, 128,
+                "You have finished the game with score: %d!!!! press 'q' to quit", score);
+			glutSetWindowTitle(window_title);
+			finished = true;	
 			
 		// Otherwise, go to level + 1.
 		} else {
@@ -545,11 +553,11 @@ void update_state(void) {
     glutSwapBuffers();
 
 	// Show level info and framerate.
-    if (frametime >= 1000)
+    if (frametime >= 1000 && !finished)
     {
         char window_title[128];
         snprintf(window_title, 128,
-                "Box2D: %f fps, level %d/%d, score: %d, levelscore: %d", 
+                "Box2D: %f fps, level %d/%d || score: %d, levelscore: %d", 
 				frame_count / (frametime / 1000.f), current_level+1, num_levels, 
 				score, level_score);
         glutSetWindowTitle(window_title);
@@ -582,7 +590,7 @@ void key_pressed(unsigned char key, int x, int y) {
             exit(0);
             break;
         case 's':
-            pause_game = false;
+            if (!finished) pause_game = false;
             break;
         case 'r':
             load_world(current_level);
