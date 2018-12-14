@@ -66,7 +66,9 @@ int num_clicks = 0;
 float clicks[4][2];
 int last_time;
 int frame_count;
-int amount_of_squares = 0;
+
+// variables for the scoring system
+int amount_of_quadrilaterals = 0;
 float amount_multiplier = 0.2;
 int score = 0;
 int level_score;
@@ -74,8 +76,10 @@ int death_penalty = 100;
 
 float color_counter = 1;
 float color_frames = 100;
-float color_1[3] = {0.5, 0, 0};
-float color_2[3] = {0, 0.5, 0};
+
+// initialize the base color and the next color
+float base_color[3] = {0, 0, 0};
+float next_color[3] = {0.5, 0.5, 0.5};
 
 // Characteristics of the ball.
 float ball_radius = 0.3;
@@ -267,7 +271,7 @@ void load_world(unsigned int level_id) {
 	// Keep the game paused while user sets up other objects in the level.
 	pause_game = true;
 
-	amount_of_squares = 0;
+	amount_of_quadrilaterals = 0;
 	level_score = 1000;
 }
 
@@ -363,6 +367,7 @@ void add_new_object(void) {
 	obj_color.z = colors[2][2];
 	obj_colors.push_back(obj_color);
 
+	// calculate the area size of the created quadrilateral
 	float vec_1[2];
 	float vec_2[2];
 	vec_1[0] = clicks[sorted_angles[2]][0] - clicks[sorted_angles[0]][0];
@@ -375,10 +380,12 @@ void add_new_object(void) {
 	float dot = vec_1[0]*vec_2[0] + vec_1[1]*vec_2[1];
 	angle = acos(dot/(len_1*len_2));
 
-	int size = (len_1 * len_2/2 * sin(angle) * 100) * (1 + amount_multiplier * amount_of_squares);
-	amount_of_squares++;
+	int size = len_1 * len_2/2 * sin(angle) * 100;
 
-	level_score -= size;
+	// remove points from the score based on the size of the quadrilateral 
+	// and the amount of quadrilaterals already placed
+	level_score -= (size * 100) * (1 + amount_multiplier * amount_of_quadrilaterals);
+	amount_of_quadrilaterals++;
 }
 
 
@@ -498,19 +505,26 @@ void update_state(void) {
     
 	// animate background color
 	float k = color_counter / color_frames;
-	glClearColor(color_2[0] * k + color_1[0] * (1-k),
-				 color_2[1] * k + color_1[1] * (1-k),
-				 color_2[2] * k + color_1[2] * (1-k),
+	glClearColor(next_color[0] * k + base_color[0] * (1-k),
+				 next_color[1] * k + base_color[1] * (1-k),
+				 next_color[2] * k + base_color[2] * (1-k),
 				 1);
-	color_counter++;
-	if (color_counter == color_frames) {
-		color_1[0] = color_2[0];
-		color_1[1] = color_2[1];
-		color_1[2] = color_2[2];
 
-		color_2[0] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
-		color_2[1] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
-		color_2[2] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
+	color_counter++;
+
+	// choose a new color to be the next color to animate to and make the 
+	// old next color the base color
+	if (color_counter == color_frames) {
+		base_color[0] = next_color[0];
+		base_color[1] = next_color[1];
+		base_color[2] = next_color[2];
+
+		// create a new color by choosing a random number between 0.25 and 0.75 
+		// for the r, g and b.
+		next_color[0] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
+		next_color[1] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
+		next_color[2] = ((float) rand() / RAND_MAX) * 0.5 + 0.25;
+
 		color_counter = 0;
 	}
 	
