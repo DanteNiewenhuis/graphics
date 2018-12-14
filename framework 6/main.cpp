@@ -1,9 +1,9 @@
 /* Computer Graphics and Game Technology, Assignment Box2D game
  *
- * Student name ....
- * Student email ...
- * Collegekaart ....
- * Date ............
+ * Student name .... Dante Niewenhuis Thams Bellucci
+ * Student email ... d.niewenhuis@hotmail.com	th.bellucci@gmail.com
+ * Collegekaart .... 11058595	11257245
+ * Date ............ 14 - 12 - 2018
  * Comments ........
  */
 
@@ -57,7 +57,7 @@ std::vector<b2Body*> obj_bodies;
 
 // Game state (paused?, level?, clicks?, etc.)
 bool pause_game = true;
-unsigned int current_level = 4;
+unsigned int current_level = 0;
 unsigned int num_levels;
 level_t *levels;
 point_t finish_pos;
