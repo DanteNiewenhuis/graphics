@@ -266,30 +266,47 @@ int is_counterclockwise(float a[2], float b[2], float c[2]) {
 	return area < 0;
 }
 
+std::vector<int> sort_indexes(const std::vector<float> &v) {
+
+  // initialize original index locations
+  std::vector<int> idx = {0,1,2,3};
+
+  // sort indexes based on comparing values in v
+  std::sort(idx.begin(), idx.end(),
+       [&v](float i1, float i2) {return v[i1] < v[i2];});
+
+  return idx;
+}
 
 void add_new_object(void) {
-	// Check whether recorded four points are wounded counter-clockwise
-	// in terms of their triangle fan specification ((0, 1, 2) and (0, 2, 3)).
-	int area1 = is_counterclockwise(clicks[0], clicks[1], clicks[2]);
-	int area2 = is_counterclockwise(clicks[0], clicks[2], clicks[3]);
-	
-	// Swap points to get correct order.
-	if (!area1 && !area2) {
-		std::swap(clicks[1][0], clicks[3][0]);
-		std::swap(clicks[1][1], clicks[3][1]);
-	} else if (!area1) {
-		// TODO: other case
-	} else if (!area2) {
-		// TODO: other case
-	} 
-	
 	// Create b2Vec2 array with local vertex positions for Box2D.
 	float mean_x = (clicks[0][0] + clicks[1][0] + clicks[2][0] + clicks[3][0]) / 4;
 	float mean_y = (clicks[0][1] + clicks[1][1] + clicks[2][1] + clicks[3][1]) / 4;
-	b2Vec2 pts[4] = {b2Vec2(clicks[0][0] - mean_x, clicks[0][1] - mean_y),
-					 b2Vec2(clicks[1][0] - mean_x, clicks[1][1] - mean_y),
-					 b2Vec2(clicks[2][0] - mean_x, clicks[2][1] - mean_y),
-					 b2Vec2(clicks[3][0] - mean_x, clicks[3][1] - mean_y)};
+
+	std::vector<float> angles;
+	float angle;
+	float vec[2];
+	float len;
+	for (int i = 0; i < 4; i++) {
+		vec[0] = clicks[i][0] - mean_x;
+		vec[1] = clicks[i][1] - mean_y;
+		len = sqrt(vec[0]*vec[0] + vec[1] * vec[1]);
+		angle = acos((vec[0])/(len));
+
+		if (clicks[i][1] > mean_y) {
+			angle = 2 * M_PI - angle;
+		}
+
+		angles.push_back(angle);
+	}
+
+	std::vector<int> sorted_angles = sort_indexes(angles);
+
+
+	b2Vec2 pts[4] = {b2Vec2(clicks[sorted_angles[0]][0] - mean_x, clicks[sorted_angles[0]][1] - mean_y),
+					 b2Vec2(clicks[sorted_angles[1]][0] - mean_x, clicks[sorted_angles[1]][1] - mean_y),
+					 b2Vec2(clicks[sorted_angles[2]][0] - mean_x, clicks[sorted_angles[2]][1] - mean_y),
+					 b2Vec2(clicks[sorted_angles[3]][0] - mean_x, clicks[sorted_angles[3]][1] - mean_y)};
 					 
 	// Set up dynamic body, shape and fixture.
 	b2BodyDef objBodyDef;
